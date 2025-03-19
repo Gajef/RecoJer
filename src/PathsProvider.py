@@ -19,3 +19,12 @@ class PathsProvider:
 
         return path
 
+    def get_picture_path_by_number(self, number, mode="Preprocessed"):
+        if mode == "Preprocessed" or mode == "Raw":
+            path = f"{self.PICTURES}/egyptianTexts{number}.jpg"
+            if not os.path.exists(path):
+                path = None
+        else:
+            path = None
+
+        return path
