@@ -7,6 +7,7 @@ class PathsProvider:
         self.PICTURES = self.DATASET + "/Pictures"
         self.AUTOMATED_LOCATIONS = self.AUTOMATED + "/Locations"
         self.MANUAL_LOCATIONS = self.MANUAL + "/Locations"
+        self.AUGMENTED_DATASET = "../data/GlyphDataset/AugmentedDataset"
 
     # Returns the path from a hieroglyphic image based on the picture, number and gardiner code.
     def get_path_by_picture_number_gardiner(self, picture, number, gardiner, mode="Preprocessed"):
