@@ -1,4 +1,6 @@
 import os.path
+
+import natsort.natsort
 class PathsProvider:
     def __init__(self):
         self.DATASET = "../data/GlyphDataset/Dataset"
@@ -8,6 +10,8 @@ class PathsProvider:
         self.AUTOMATED_LOCATIONS = self.AUTOMATED + "/Locations"
         self.MANUAL_LOCATIONS = self.MANUAL + "/Locations"
         self.AUGMENTED_DATASET = "../data/GlyphDataset/AugmentedDataset"
+        self.AUGMENTATION_MASKS_BIG = "../data/GlyphDataset/AugmentationMasks/Big"
+        self.AUGMENTATION_MASKS_SMALL = "../data/GlyphDataset/AugmentationMasks/Small"
 
     # Returns the path from a hieroglyphic image based on the picture, number and gardiner code.
     def get_path_by_picture_number_gardiner(self, picture, number, gardiner, mode="Preprocessed"):
@@ -29,3 +33,18 @@ class PathsProvider:
             path = None
 
         return path
+
+    def get_files_and_folders_in_order(self, path):
+        files_and_folders_paths = os.listdir(path)
+        return natsort.natsorted(files_and_folders_paths)
+
+    def get_files_in_order(self, path):
+        files_and_folders_paths = self.get_files_and_folders_in_order(path)
+        files_paths = list(filter(lambda file_folder_path: os.path.isfile(path + "/" + file_folder_path), files_and_folders_paths))
+
+        return files_paths
+
+    def get_files_extension_in_order(self, path, extension):
+        files_paths = self.get_files_in_order(path)
+        filtered_paths =  list(filter(lambda file_path: file_path.split(".")[1] == extension, files_paths))
+        return filtered_paths
