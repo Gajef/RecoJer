@@ -17,6 +17,12 @@ logs
 models
 results
 
+# iPynb checkpoints
+src/.ipynb_checkpoints
+
+# YOLO runs
+src/runs
+
 # Settings
 .idea/
 
