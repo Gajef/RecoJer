@@ -49,7 +49,7 @@ class PathsProvider:
         filtered_paths =  list(filter(lambda file_path: file_path.split(".")[1] == extension, files_paths))
         return filtered_paths
 
-    def get_files_path_by_extention_in_order(self, path, extension):
+    def get_files_path_by_extension_in_order(self, path, extension):
         files_paths = self.get_files_by_extension_in_order(path, extension)
         files_paths = list(map(lambda file_path: path + "/" + file_path, files_paths))
         return files_paths
