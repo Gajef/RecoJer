@@ -3,6 +3,7 @@ from os import listdir
 import pandas as pd
 from matplotlib import pyplot as plt
 import cv2
+import numpy as np
 
 class GlyphdatasetAnalyzer:
     def __init__(self):
@@ -45,3 +46,15 @@ class GlyphdatasetAnalyzer:
                 print(f"No se han encontrado jeroglíficos con el id de Gardiner {gardiner_id}")
 
         return query
+
+    #
+    def find_hieroglyphics_by_gardiner_classes(self, dataframe, gardiner_ids, verbose = False):
+        query = dataframe.loc[dataframe['gardiner'].isin(gardiner_ids)]
+        return query
+
+    def find_hieroglyphics_with_at_least_n_occurrences(self, dataframe, n, verbose = False):
+        query = dataframe['gardiner'].value_counts()
+        gardiner_ids = query[query >= 50].index
+        query = dataframe[dataframe['gardiner'].isin(gardiner_ids)]
+
+        return np.array(gardiner_ids), query
