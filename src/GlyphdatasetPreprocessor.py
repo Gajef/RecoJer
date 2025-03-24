@@ -83,7 +83,7 @@ class GlyphdatasetPreprocessor:
         return stacked
 
     def remove_image_parts(self, binarized_img, verbose=False):
-        masks_paths = self.paths.get_files_path_by_extention_in_order(self.paths.AUGMENTATION_MASKS_SMALL, "png")
+        masks_paths = self.paths.get_files_path_by_extension_in_order(self.paths.AUGMENTATION_MASKS_SMALL, "png")
         mask_path = masks_paths[np.random.randint(0, len(masks_paths))]
         mask = cv2.imread(mask_path)
         mask_binarized = self.binarize(mask)
