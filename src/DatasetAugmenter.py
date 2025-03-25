@@ -30,30 +30,30 @@ class DatasetAugmenter:
 
         # 2 extra brightness pictures
         higher_brightness = self.preprocessor.brightness(image, 1.5)
-        hb_picture = Picture(higher_brightness, f"{picture_name.split(".")[0]}_hb")
+        hb_picture = Picture(higher_brightness, f"{picture_name.split('.')[0]}_hb")
         lower_brightness = self.preprocessor.brightness(image, 0.5)
-        lb_picture = Picture(lower_brightness, f"{picture_name.split(".")[0]}_lb")
+        lb_picture = Picture(lower_brightness, f"{picture_name.split('.')[0]}_lb")
         self.train_test_split_and_save_pictures([picture, hb_picture, lb_picture])
 
         # 3 binarized imgs
         auto_binarized_img = self.preprocessor.binarize(image)
-        bin_picture = Picture(auto_binarized_img, f"{picture_name.split(".")[0]}_bin")
+        bin_picture = Picture(auto_binarized_img, f"{picture_name.split('.')[0]}_bin")
         low_binarized_img = self.preprocessor.binarize(image, th=140)
-        lbin_picture = Picture(low_binarized_img, f"{picture_name.split(".")[0]}_low")
+        lbin_picture = Picture(low_binarized_img, f"{picture_name.split('.')[0]}_low")
         high_binarized_img = self.preprocessor.binarize(image, th=180)
-        hbin_picture = Picture(high_binarized_img, f"{picture_name.split(".")[0]}_hin")
+        hbin_picture = Picture(high_binarized_img, f"{picture_name.split('.')[0]}_hin")
         self.train_test_split_and_save_pictures([bin_picture, lbin_picture, hbin_picture])
 
         # 1 borders_imgs
         auto_borders = self.preprocessor.ext_border(auto_binarized_img)
-        ab_picture = Picture(auto_borders, f"{picture_name.split(".")[0]}_ab")
+        ab_picture = Picture(auto_borders, f"{picture_name.split('.')[0]}_ab")
         self.train_test_split_and_save_pictures([ab_picture])
 
         # 2 shadow_imgs
         left_shadow_img = self.preprocessor.shadow(image, "left")
-        lf_picture = Picture(left_shadow_img, f"{picture_name.split(".")[0]}_left")
+        lf_picture = Picture(left_shadow_img, f"{picture_name.split('.')[0]}_left")
         right_shadow_img = self.preprocessor.shadow(image, "right")
-        rg_picture = Picture(right_shadow_img, f"{picture_name.split(".")[0]}_rg")
+        rg_picture = Picture(right_shadow_img, f"{picture_name.split('.')[0]}_rg")
         self.train_test_split_and_save_pictures([lf_picture, rg_picture])
 
         if verbose:
