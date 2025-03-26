@@ -21,7 +21,7 @@ class GlyphAsciiGenerator:
     def generate_all_single_glyphs(self):
         generator_index = 0
         for generator in self.generators:
-            for gardiner, hexcode in self.mapper.gardiner2unicode.items():
+            for gardiner in self.mapper.gardiner2unicode.keys():
                 generator.generate_image(self.mapper.to_unicode_char(gardiner) , save_path_png=f"{self.paths.FONTS}/results/{gardiner}_{generator_index}.png")
             print(generator_index)
             generator_index += 1
