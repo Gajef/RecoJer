@@ -10,7 +10,7 @@ class GlyphAsciiGenerator:
 
     def _create_generators(self, ):
         fonts_path = self.paths.FONTS
-        fonts_paths_list = self.paths.get_files_by_extension_in_order(fonts_path, "tiff")
+        fonts_paths_list = self.paths.get_files_by_extension_in_order(fonts_path, "ttf")
 
         generators = []
         for font in fonts_paths_list:
@@ -19,7 +19,6 @@ class GlyphAsciiGenerator:
         return generators
 
     def generate_all_single_glyphs(self):
-        print("generadores", len(self.generators))
         for generator in self.generators:
             for gardiner_glyph in self.mapper.gardiner2unicode.keys():
                 print(generator, gardiner_glyph)
