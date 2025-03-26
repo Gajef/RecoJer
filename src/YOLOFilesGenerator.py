@@ -32,6 +32,7 @@ class YOLOFilesGenerator:
 
         original_file.close()
         new_file.close()
+        
     def generate_yaml(self, path):
         with open("data.yaml", "w") as data_yaml:
             lines = [f"path: {path}\n"
