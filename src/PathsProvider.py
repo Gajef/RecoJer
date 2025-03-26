@@ -12,6 +12,7 @@ class PathsProvider:
         self.AUGMENTED_DATASET = "../data/GlyphDataset/AugmentedDataset"
         self.AUGMENTATION_MASKS_BIG = "../data/GlyphDataset/AugmentationMasks/Big"
         self.AUGMENTATION_MASKS_SMALL = "../data/GlyphDataset/AugmentationMasks/Small"
+        self.FONTS = "../data/fonts"
 
     # Returns the path from a hieroglyphic image based on the picture, number and gardiner code.
     def get_path_by_picture_number_gardiner(self, picture, number, gardiner, mode="Preprocessed"):
