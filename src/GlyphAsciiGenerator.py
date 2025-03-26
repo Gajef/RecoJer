@@ -19,6 +19,7 @@ class GlyphAsciiGenerator:
         return generators
 
     def generate_all_single_glyphs(self):
+        print("generadores", len(self.generators))
         for generator in self.generators:
             for gardiner_glyph in self.mapper.gardiner2unicode.keys():
                 print(generator, gardiner_glyph)
