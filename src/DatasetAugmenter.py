@@ -14,7 +14,7 @@ class DatasetAugmenter:
     def __init__(self):
         self.paths = PathsProvider()
         self.preprocessor = GlyphdatasetPreprocessor()
-        self.files_generator = YOLOFilesGenerator()
+        self.files_generator = YOLOFilesGenerator("glyphdataset")
 
 
     def full_augmentation(self):
@@ -106,3 +106,11 @@ class DatasetAugmenter:
 
         if not os.path.exists(f"{dst}/{folder_name}/val"):
             os.makedirs(f"{dst}/{folder_name}/val")
+
+    def random_rotation(self, image):
+        choice = np.random.choice([cv2.ROTATE_90_CLOCKWISE, cv2.ROTATE_180, cv2.ROTATE_90_COUNTERCLOCKWISE], 1)
+        # rotation = cv2.rotate(image, choice[0])
+        #
+        # return rotation
+        return image
+
