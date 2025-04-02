@@ -3,6 +3,7 @@ import random
 
 import cv2
 import numpy as np
+from PIL import Image
 
 from GlyphdatasetPreprocessor import GlyphdatasetPreprocessor
 from PathsProvider import PathsProvider
@@ -108,9 +109,45 @@ class DatasetAugmenter:
             os.makedirs(f"{dst}/{folder_name}/val")
 
     def random_rotation(self, image):
-        choice = np.random.choice([cv2.ROTATE_90_CLOCKWISE, cv2.ROTATE_180, cv2.ROTATE_90_COUNTERCLOCKWISE], 1)
-        # rotation = cv2.rotate(image, choice[0])
-        #
-        # return rotation
-        return image
+        choice = np.random.choice([0, cv2.ROTATE_90_CLOCKWISE, cv2.ROTATE_90_COUNTERCLOCKWISE], 1)
+        if choice == 0:
+            rotation = image
+        else:
+            rotation = cv2.rotate(image, choice[0])
 
+        return rotation
+
+    def random_dilation(self, image):
+        choice = np.random.choice([0, 1], 1)
+        if choice == 0:
+            dilation = image
+        else:
+            dilation = cv2.dilate(image, np.ones((3, 3), np.uint8), iterations=1)
+        return dilation
+
+    def random_erosion(self, image):
+        choice = np.random.choice([0, 1], 1)
+        if choice == 0:
+            erosion = image
+        else:
+            erosion = cv2.erode(image, np.ones((3, 3), np.uint8), iterations=1)
+        return erosion
+
+    def random_filling(self, image):
+        choice = np.random.choice([0, 1], 1)
+        image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+        h, w = image.shape[:2]
+        mask = np.zeros((h + 2, w + 2), np.uint8)
+        if choice == 0:
+            filling = image
+        else:
+            filling = cv2.floodFill(image, mask, (0, 0), 255)
+        filling = cv2.cvtColor(filling, cv2.COLOR_GRAY2RGB)
+        return filling
+
+    def random_transformation(self, image):
+        rotation = self.random_rotation(image)
+        erosion = self.random_erosion(rotation)
+        # filling = self.random_filling(erosion)
+        final_image = Image.fromarray(erosion.astype('uint8'), 'RGB')
+        return final_image

@@ -88,6 +88,7 @@ class GlyphAsciiGenerator:
         picture_id = self._generate_image_id()
         white_canvas.save(f"{self.paths.ASCII_AUGMENTATION}/pt_{picture_id}.png")
         white_canvas.close()
+        self.files_generator.generate_txt(annotations, f"pt_{picture_id}.txt")
 
     def initialize_picture(self, column_width, img_height, img_width, margin, real_width):
         withe_canvas = np.full((img_height, img_width), 255, dtype=np.uint8)
@@ -119,7 +120,7 @@ class GlyphAsciiGenerator:
         if choice == "glyph":
             next_image_path = glyphs_paths_list.pop(0)
             next_image = Image.open(next_image_path)
-            next_image = self.augmenter.random_rotation(next_image)
+            next_image = self.augmenter.random_transformation(np.array(next_image))
             is_glyph = True
         elif choice == "blank" or choice == "line" or choice == "erased" or choice == "dots":
             next_image_path = f"{self.paths.EXTRA_ASCII_IMAGES}/{choice}.png"
