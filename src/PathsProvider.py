@@ -18,6 +18,7 @@ class PathsProvider:
         self.ASCII_GLYPHS = self.ASCII_DATASET + "/AsciiGlyphs"
         self.ASCII_AUGMENTATION = self.ASCII_DATASET + "/AsciiAugmentation"
         self.EXTRA_ASCII_IMAGES = self.ASCII_DATASET + "/ExtraImages"
+        self.PYRAMIDTEXTS_BOOK = "../data/LibroMuertos"
 
 
     # Returns the path from a hieroglyphic image based on the picture, number and gardiner code.
