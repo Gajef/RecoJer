@@ -9,7 +9,12 @@ from PathsProvider import PathsProvider
 # path='/home/vruiz/RecoJer/data/LibroMuertos/'
 paths = PathsProvider()
 path = paths.PYRAMIDTEXTS_BOOK
-dst_path = "/imagenes_jpg_gris" # imagenes_jpg
+gray = True
+
+if gray:
+    dst_path = "/imagenes_jpg_gris"
+else:
+    dst_path = "/imagenes_jpg"
 onlyfiles = [f for f in listdir(path) if isfile(join(path, f))]
 print(onlyfiles)
 
@@ -24,5 +29,9 @@ for d in range(len(onlyfiles)):
 
         for i in range(len(images)):
             if i > 1:
+                if gray:
+                    image = images[i].convert('L')
+                else:
+                    image = images[i]
                 # Save pages as images in the pdf
-                images[i].save(path + dst_path + '/doc_' + str(number_doc) + '_page_' + str(i) + '.jpg', 'JPEG')
+                image.save(path + dst_path + '/doc_' + str(number_doc) + '_page_' + str(i) + '.jpg', 'JPEG')
