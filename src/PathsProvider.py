@@ -20,7 +20,6 @@ class PathsProvider:
         self.EXTRA_ASCII_IMAGES = self.ASCII_DATASET + "/ExtraImages"
         self.PYRAMIDTEXTS_BOOK = "../data/LibroMuertos"
 
-
     # Returns the path from a hieroglyphic image based on the picture, number and gardiner code.
     def get_path_by_picture_number_gardiner(self, picture, number, gardiner, mode="Preprocessed"):
         if mode == "Preprocessed" or mode == "Raw":
