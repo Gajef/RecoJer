@@ -5,8 +5,11 @@
 from pdf2image import convert_from_path
 from os import listdir
 from os.path import isfile, join
-path='/home/vruiz/RecoJer/data/LibroMuertos/'
-
+from PathsProvider import PathsProvider
+# path='/home/vruiz/RecoJer/data/LibroMuertos/'
+paths = PathsProvider()
+path = paths.PYRAMIDTEXTS_BOOK
+dst_path = "/imagenes_jpg_gris" # imagenes_jpg
 onlyfiles = [f for f in listdir(path) if isfile(join(path, f))]
 print(onlyfiles)
 
@@ -22,4 +25,4 @@ for d in range(len(onlyfiles)):
         for i in range(len(images)):
             if i > 1:
                 # Save pages as images in the pdf
-                images[i].save(path + 'imagenes_jpg/doc_' + str(number_doc) + '_page_' + str(i) + '.jpg', 'JPEG')
+                images[i].save(path + dst_path + '/doc_' + str(number_doc) + '_page_' + str(i) + '.jpg', 'JPEG')
