@@ -29,7 +29,7 @@ class PTBookImporter:
 
             number_doc = int(onlyfiles[d].partition("PT ")[2][0])
             if number_doc > 1:  # Importo imágenes de todos los documentos menos del primero
-                file_path = path + onlyfiles[d]
+                file_path = join(path,onlyfiles[d])
                 # Store Pdf with convert_from_path function
                 images = convert_from_path(file_path)
 
