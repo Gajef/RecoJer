@@ -4,6 +4,7 @@ import random
 import cv2
 import numpy as np
 from PIL import Image
+from PIL import ImageOps
 
 from GlyphdatasetPreprocessor import GlyphdatasetPreprocessor
 from PathsProvider import PathsProvider
@@ -108,6 +109,25 @@ class DatasetAugmenter:
         if not os.path.exists(f"{dst}/{folder_name}/val"):
             os.makedirs(f"{dst}/{folder_name}/val")
 
+    def trim_borders(self, image):
+        inverted = ImageOps.invert(image)
+        bbox = inverted.getbbox()
+        trimmed_image = inverted.crop(bbox)
+        result = ImageOps.invert(trimmed_image)
+        return result
+
+    def random_quality_loss(self, image):
+        choice = np.random.choice([False, True], 1)
+        if choice:
+            image_height, image_width = image.shape
+            image_resized = cv2.resize(image, (int(image_width * 0.75), int(image_height * 0.75)))
+            image_height, image_width = image_resized.shape
+            result = cv2.resize(image, (int(image_width * 1.25), int(image_height * 1.25)))
+        else:
+            result = image
+
+        return result
+
     def random_rotation(self, image):
         choice = np.random.choice([0, cv2.ROTATE_90_CLOCKWISE, cv2.ROTATE_90_COUNTERCLOCKWISE], 1)
         if choice == 0:
@@ -118,36 +138,48 @@ class DatasetAugmenter:
         return rotation
 
     def random_dilation(self, image):
-        choice = np.random.choice([0, 1], 1)
-        if choice == 0:
-            dilation = image
-        else:
+        choice = np.random.choice([False, True], 1)
+        if choice:
             dilation = cv2.dilate(image, np.ones((3, 3), np.uint8), iterations=1)
+        else:
+            dilation = image
+
         return dilation
 
     def random_erosion(self, image):
-        choice = np.random.choice([0, 1], 1)
-        if choice == 0:
-            erosion = image
-        else:
+        choice = np.random.choice([False, True], 1)
+        if choice:
             erosion = cv2.erode(image, np.ones((3, 3), np.uint8), iterations=1)
+        else:
+            erosion = image
         return erosion
 
     def random_filling(self, image):
-        choice = np.random.choice([0, 1], 1)
-        image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
-        h, w = image.shape[:2]
-        mask = np.zeros((h + 2, w + 2), np.uint8)
-        if choice == 0:
-            filling = image
+        choice = np.random.choice([False, True], 1)
+        _, thresh = cv2.threshold(image, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+        if choice:
+            filling = cv2.floodFill(thresh, None, (0, 0), 255)[2]
+            filling[filling == 1] = 255
         else:
-            filling = cv2.floodFill(image, mask, (0, 0), 255)
-        filling = cv2.cvtColor(filling, cv2.COLOR_GRAY2RGB)
+            filling = image
         return filling
+
+    def random_threshold(self, image):
+        choice = np.random.choice([False, True], 1)
+        if choice:
+            _, thresh = cv2.threshold(image, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+        else:
+            thresh = image
+        return thresh
 
     def random_transformation(self, image):
         rotation = self.random_rotation(image)
         erosion = self.random_erosion(rotation)
-        # filling = self.random_filling(erosion)
-        final_image = Image.fromarray(erosion.astype('uint8'), 'RGB')
+        quality_loss = self.random_quality_loss(erosion)
+        choice = np.random.choice([0, 1], 1)
+        if choice == 0:
+            thresh = self.random_filling(quality_loss)
+        else:
+            thresh = self.random_threshold(quality_loss)
+        final_image = self.trim_borders(Image.fromarray(thresh.astype('uint8'), 'L'))
         return final_image
