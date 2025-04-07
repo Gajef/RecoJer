@@ -1,8 +1,6 @@
 import string
 
-import cv2
 import numpy as np
-import os
 
 from PIL import Image, ImageDraw
 from PIL import ImageFont
@@ -72,7 +70,7 @@ class GlyphAsciiGenerator:
             next_image.close()
 
             if plotting_index[1] + next_image_height <= real_height:
-                plotting_index = (plotting_index[0], plotting_index[1] + next_image_height)
+                plotting_index = (plotting_index[0], plotting_index[1] + next_image_height + 35)
             elif plotting_index[1] + next_image_height > real_height and len(plotting_column_positions) != 0:
                 plotting_index = (plotting_index[0] + plotting_column_positions.pop(), 440)
             else:
@@ -119,7 +117,7 @@ class GlyphAsciiGenerator:
         choice = np.random.choice(options, 1, p=[0.6, 0.25, 0.05, 0.0, 0.0, 0.05, 0.05])[0]
         if choice == "glyph":
             next_image_path = glyphs_paths_list.pop(0)
-            next_image = Image.open(next_image_path)
+            next_image = Image.open(next_image_path).convert("L")
             next_image = self.augmenter.random_transformation(np.array(next_image))
             is_glyph = True
         elif choice == "blank" or choice == "line" or choice == "erased" or choice == "dots":
