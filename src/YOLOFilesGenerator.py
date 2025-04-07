@@ -51,8 +51,8 @@ class YOLOFilesGenerator:
 
             data_yaml.writelines(lines)
 
-    def generate_txt(self, annotations, filename):
-        with open(self.paths.ASCII_AUGMENTATION + "/labels/" + filename, "w") as text_file:
+    def generate_txt(self, annotations, filename, path):
+        with open(self.paths.ASCII_AUGMENTATION + path + "/" + filename, "w") as text_file:
             for annotation in annotations:
                 text_file.write(f"{annotation}\n")
 

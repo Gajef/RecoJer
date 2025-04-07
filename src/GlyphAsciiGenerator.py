@@ -38,7 +38,7 @@ class GlyphAsciiGenerator:
                                          save_path_png=f"{self.paths.ASCII_GLYPHS}/{gardiner}_{generator_index}.png")
             generator_index += 1
 
-    def generate_picture_pyramid_text(self, glyphs_paths_list):
+    def generate_picture_pyramid_text(self, glyphs_paths_list, path):
         img_height, img_width = (2800, 1700)
         margin = 150
         column_width = 100
@@ -77,16 +77,16 @@ class GlyphAsciiGenerator:
                 complete_picture = True
 
             if complete_picture:
-                white_canvas.save(f"{self.paths.ASCII_AUGMENTATION}/pt_{picture_id}.png")
+                white_canvas.save(f"{self.paths.ASCII_AUGMENTATION}{path}/pt_{picture_id}.png")
                 white_canvas.close()
-                self.files_generator.generate_txt(annotations, f"pt_{picture_id}.txt")
+                self.files_generator.generate_txt(annotations, path, f"pt_{picture_id}.txt")
                 complete_picture, plotting_column_positions, plotting_index, white_canvas, annotations, picture_id = self.initialize_picture(
                     column_width, img_height, img_width, margin, real_width)
 
         picture_id = self._generate_image_id()
-        white_canvas.save(f"{self.paths.ASCII_AUGMENTATION}/pt_{picture_id}.png")
+        white_canvas.save(f"{self.paths.ASCII_AUGMENTATION}{path}/pt_{picture_id}.png")
         white_canvas.close()
-        self.files_generator.generate_txt(annotations, f"pt_{picture_id}.txt")
+        self.files_generator.generate_txt(annotations, path, f"pt_{picture_id}.txt")
 
     def initialize_picture(self, column_width, img_height, img_width, margin, real_width):
         withe_canvas = np.full((img_height, img_width), 255, dtype=np.uint8)
