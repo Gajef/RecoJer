@@ -154,6 +154,38 @@ class DatasetAugmenter:
             erosion = image
         return erosion
 
+    def random_resize(self, image):
+        choice = np.random.choice([False, True], 1)
+        if choice:
+            image_width, image_height = image.shape
+            scale_factor_w = np.random.uniform(0.85, 1.00)
+            scale_factor_h = np.random.uniform(0.85, 1.00)
+            image_resized = cv2.resize(image, (int(image_width * scale_factor_w), int(image_height * scale_factor_h)))
+        else:
+            image_resized = image
+
+        return image_resized
+
+    def random_little_rotation(self, image):
+        choice = np.random.choice([False, True], 1)
+        if choice:
+            inverted = ImageOps.invert(Image.fromarray(image))
+            inverted = np.array(inverted)
+            (h, w) = inverted.shape[:2]
+            center = (w // 2, h // 2)
+            rotation_matrix = cv2.getRotationMatrix2D(center, np.random.uniform(-5, 5), 1.0)
+            rotated = cv2.warpAffine(inverted, rotation_matrix, (w, h))
+            rotated = np.array(ImageOps.invert(Image.fromarray(rotated)))
+
+        else:
+            rotated = image
+
+        return rotated
+
+    # def random_skew(self, image):
+    #     choice = np.random.choice([0, 1, ], 1)
+    #     pass
+
     def random_filling(self, image):
         choice = np.random.choice([False, True], 1)
         _, thresh = cv2.threshold(image, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
@@ -176,10 +208,12 @@ class DatasetAugmenter:
         rotation = self.random_rotation(image)
         erosion = self.random_erosion(rotation)
         quality_loss = self.random_quality_loss(erosion)
+        little_rotation = self.random_little_rotation(quality_loss)
+        resize = self.random_resize(little_rotation)
         choice = np.random.choice([0, 1], 1)
         if choice == 0:
-            thresh = self.random_filling(quality_loss)
+            thresh = self.random_filling(resize)
         else:
-            thresh = self.random_threshold(quality_loss)
+            thresh = self.random_threshold(resize)
         final_image = self.trim_borders(Image.fromarray(thresh.astype('uint8'), 'L'))
         return final_image
