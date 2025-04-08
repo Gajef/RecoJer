@@ -1,3 +1,4 @@
+import os
 import string
 
 import numpy as np
@@ -37,6 +38,29 @@ class GlyphAsciiGenerator:
                 generator.generate_image(self.mapper.to_unicode_char(gardiner),
                                          save_path_png=f"{self.paths.ASCII_GLYPHS}/{gardiner}_{generator_index}.png")
             generator_index += 1
+
+    def generate_train_val_pt_pictures(self, path, n_train, n_val, replace=True):
+        # path = self.path.ASCII_GLYPHS
+        if replace:
+            self.remove_previous_pictures_and_labels(self.paths.ASCII_AUGMENTATION)
+        self.generate_pt_pictures(path, n_train, "/train")
+        self.generate_pt_pictures(path, n_val, "/val")
+
+    def generate_pt_pictures(self, path, n, dst):
+        rng = np.random.default_rng()
+        for i in range(n):
+            img_paths = self.paths.get_files_path_by_extension_in_order(path, "png")
+            rng.shuffle(img_paths)
+            self.generate_picture_pyramid_text(img_paths, dst)
+
+    def remove_previous_pictures_and_labels(self, dataset_path):
+        img_train_paths = self.paths.get_files_path_by_extension_in_order(dataset_path + "/images/train", "png")
+        img_val_paths = self.paths.get_files_path_by_extension_in_order(dataset_path + "/images/val", "png")
+        txt_train_paths = self.paths.get_files_path_by_extension_in_order(dataset_path + "/labels/train", "txt")
+        txt_val_paths = self.paths.get_files_path_by_extension_in_order(dataset_path + "/labels/val", "txt")
+
+        for path in img_train_paths + img_val_paths + txt_train_paths + txt_val_paths:
+            os.remove(path)
 
     def generate_picture_pyramid_text(self, glyphs_paths_list, path):
         img_height, img_width = (2800, 1700)
