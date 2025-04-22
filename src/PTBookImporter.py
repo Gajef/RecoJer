@@ -12,17 +12,22 @@ paths = PathsProvider()
 path = paths.PYRAMIDTEXTS_BOOK
 
 class PTBookImporter:
-    def __init__(self, book_path=path, gray=False):
+    def __init__(self, book_path=path, gray=False, png=False):
         self.book_path = book_path
         self.gray = gray
-        if gray:
-            self.dst_path = "/imagenes_jpg_gris"
+        if png:
+            self.extension = '.png'
+            self.format = 'PNG'
         else:
-            self.dst_path = "/imagenes_jpg"
+            self.extension = '.jpg'
+            self.format = 'JPEG'
+        if gray:
+            self.dst_path = f"/imagenes_{self.extension[1:]}_gris"
+        else:
+            self.dst_path = f"/imagenes_{self.extension[1:]}"
 
     def generate_images(self):
         onlyfiles = [f for f in listdir(path) if isfile(join(path, f))]
-        print(onlyfiles)
 
         # Convierto pdf en jpg
         for d in range(len(onlyfiles)):
@@ -40,4 +45,4 @@ class PTBookImporter:
                         else:
                             image = images[i]
                         # Save pages as images in the pdf
-                        image.save(self.book_path + self.dst_path + '/doc_' + str(number_doc) + '_page_' + str(i) + '.jpg', 'JPEG')
+                        image.save(self.book_path + self.dst_path + '/doc_' + str(number_doc) + '_page_' + str(i) + self.extension, self.format)
