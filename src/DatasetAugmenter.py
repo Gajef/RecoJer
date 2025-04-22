@@ -204,6 +204,17 @@ class DatasetAugmenter:
             thresh = image
         return thresh
 
+    def random_gaussian(self, image):
+        choice = np.random.choice([False, True], 1)
+        if choice:
+            kernelW = np.random.choice([3, 5, 7], 1)
+            kernelH = np.random.choice([3, 5, 7], 1)
+            blur = cv2.GaussianBlur(image, (kernelH[0], kernelW[0]), 0)
+        else:
+            blur = image
+
+        return blur
+
     def random_transformation(self, image):
         rotation = self.random_rotation(image)
         erosion = self.random_erosion(rotation)
@@ -215,5 +226,6 @@ class DatasetAugmenter:
             thresh = self.random_filling(resize)
         else:
             thresh = self.random_threshold(resize)
-        final_image = self.trim_borders(Image.fromarray(thresh.astype('uint8'), 'L'))
+        blurred = self.random_gaussian(thresh)
+        final_image = self.trim_borders(Image.fromarray(blurred.astype('uint8'), 'L'))
         return final_image
