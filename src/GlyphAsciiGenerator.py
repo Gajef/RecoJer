@@ -77,8 +77,8 @@ class GlyphAsciiGenerator:
             next_image, next_image_path, is_glyph = self.choose_next_image(glyphs_paths_list)
 
             (next_image_width, next_image_height) = next_image.size
-            if next_image_width > 85:
-                resize_factor = 85 / next_image_width
+            if next_image_width > 60:
+                resize_factor = 60 / next_image_width
                 next_image = next_image.resize((int(next_image_width * resize_factor), int(next_image_height * resize_factor)))
                 (next_image_width, next_image_height) = next_image.size
 
