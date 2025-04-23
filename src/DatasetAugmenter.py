@@ -160,7 +160,7 @@ class DatasetAugmenter:
             image_width, image_height = image.shape
             scale_factor_w = np.random.uniform(0.85, 1.00)
             scale_factor_h = np.random.uniform(0.85, 1.00)
-            image_resized = cv2.resize(image, (int(image_width * scale_factor_w), int(image_height * scale_factor_h)))
+            image_resized = cv2.resize(image, (int(image_height * scale_factor_w), int(image_width * scale_factor_h)))
         else:
             image_resized = image
 
