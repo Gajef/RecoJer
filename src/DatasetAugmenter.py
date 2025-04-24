@@ -166,6 +166,17 @@ class DatasetAugmenter:
 
         return image_resized
 
+    def random_radioed_resize(self, image):
+        choice = np.random.choice([False, True], 1)
+        if choice:
+            image_width, image_height = image.shape
+            scale_factor = np.random.uniform(0.50, 1.00)
+            image_resized = cv2.resize(image, (int(image_height * scale_factor), int(image_width * scale_factor)))
+        else:
+            image_resized = image
+
+        return image_resized
+
     def random_little_rotation(self, image):
         choice = np.random.choice([False, True], 1)
         if choice:
@@ -215,17 +226,28 @@ class DatasetAugmenter:
 
         return blur
 
+    def random_flip(self, image):
+        choice = np.random.choice([False, True], 1)
+        if choice:
+            flipped = cv2.flip(image, 1)
+        else:
+            flipped = image
+
+        return flipped
+
     def random_transformation(self, image):
         rotation = self.random_rotation(image)
         erosion = self.random_erosion(rotation)
         quality_loss = self.random_quality_loss(erosion)
         little_rotation = self.random_little_rotation(quality_loss)
         resize = self.random_resize(little_rotation)
+        resize = self.random_radioed_resize(resize)
+        flip = self.random_flip(resize)
         choice = np.random.choice([0, 1], 1)
         if choice == 0:
-            thresh = self.random_filling(resize)
+            thresh = self.random_filling(flip)
         else:
-            thresh = self.random_threshold(resize)
+            thresh = self.random_threshold(flip)
         blurred = self.random_gaussian(thresh)
         final_image = self.trim_borders(Image.fromarray(blurred.astype('uint8'), 'L'))
         return final_image
