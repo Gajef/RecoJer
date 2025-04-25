@@ -1,4 +1,5 @@
 import os
+import random
 import string
 
 import numpy as np
@@ -94,7 +95,8 @@ class GlyphAsciiGenerator:
             next_image.close()
 
             if plotting_index[1] + next_image_height <= real_height:
-                plotting_index = (plotting_index[0], plotting_index[1] + next_image_height + 35)
+                glyph_separation = random.randint(2, 10)
+                plotting_index = (plotting_index[0], plotting_index[1] + next_image_height + glyph_separation)
             elif plotting_index[1] + next_image_height > real_height and len(plotting_column_positions) != 0:
                 plotting_index = (plotting_index[0] + plotting_column_positions.pop(), 440)
             else:
