@@ -236,18 +236,18 @@ class DatasetAugmenter:
         return flipped
 
     def random_transformation(self, image):
-        rotation = self.random_rotation(image)
+        flip = self.random_flip(image)
+        rotation = self.random_rotation(flip)
         erosion = self.random_erosion(rotation)
         quality_loss = self.random_quality_loss(erosion)
         little_rotation = self.random_little_rotation(quality_loss)
         resize = self.random_resize(little_rotation)
         resize = self.random_radioed_resize(resize)
-        flip = self.random_flip(resize)
         choice = np.random.choice([0, 1], 1)
         if choice == 0:
-            thresh = self.random_filling(flip)
+            thresh = self.random_filling(resize)
         else:
-            thresh = self.random_threshold(flip)
+            thresh = self.random_threshold(resize)
         blurred = self.random_gaussian(thresh)
         final_image = self.trim_borders(Image.fromarray(blurred.astype('uint8'), 'L'))
         return final_image
