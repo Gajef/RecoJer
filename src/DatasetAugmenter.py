@@ -5,6 +5,7 @@ import cv2
 import numpy as np
 from PIL import Image
 from PIL import ImageOps
+from mpl_toolkits.mplot3d.proj3d import transform
 
 from GlyphdatasetPreprocessor import GlyphdatasetPreprocessor
 from PathsProvider import PathsProvider
@@ -83,7 +84,6 @@ class DatasetAugmenter:
         for train_picture in train:
             train_image = train_picture.image
             train_name = train_picture.name
-
             location_number = train_name.split(".")[0].split("_")[0].split("Texts")[1]
             cv2.imwrite(f"{dst}/images/train/{train_name}.jpg", train_image)
             self.files_generator.translate_txt(f"{source}/{location_number}.txt", f"{dst}/labels/train/{train_name}.txt")
@@ -116,17 +116,26 @@ class DatasetAugmenter:
         result = ImageOps.invert(trimmed_image)
         return result
 
+    def quality_loss(self, image):
+        image_height, image_width = image.shape
+        image_resized = cv2.resize(image, (int(image_width * 0.75), int(image_height * 0.75)))
+        image_height, image_width = image_resized.shape
+        result = cv2.resize(image, (int(image_width * 1.25), int(image_height * 1.25)))
+
+        return result
+
     def random_quality_loss(self, image):
         choice = np.random.choice([False, True], 1)
-        if choice:
-            image_height, image_width = image.shape
-            image_resized = cv2.resize(image, (int(image_width * 0.75), int(image_height * 0.75)))
-            image_height, image_width = image_resized.shape
-            result = cv2.resize(image, (int(image_width * 1.25), int(image_height * 1.25)))
+        if choice[0]:
+            result = self.quality_loss(image)
         else:
             result = image
 
         return result
+
+    def rotation(self, image):
+        choice = np.random.choice([cv2.ROTATE_90_CLOCKWISE, cv2.ROTATE_90_COUNTERCLOCKWISE], 1)
+        return cv2.rotate(image, choice[0])
 
     def random_rotation(self, image):
         choice = np.random.choice([0, cv2.ROTATE_90_CLOCKWISE, cv2.ROTATE_90_COUNTERCLOCKWISE], 1)
@@ -139,97 +148,128 @@ class DatasetAugmenter:
 
     def random_dilation(self, image):
         choice = np.random.choice([False, True], 1)
-        if choice:
+        if choice[0]:
             dilation = cv2.dilate(image, np.ones((3, 3), np.uint8), iterations=1)
         else:
             dilation = image
 
         return dilation
 
+    def erosion(self, image):
+        return cv2.erode(image, np.ones((3, 3), np.uint8), iterations=1)
+
     def random_erosion(self, image):
         choice = np.random.choice([False, True], 1)
-        if choice:
+        if choice[0]:
             erosion = cv2.erode(image, np.ones((3, 3), np.uint8), iterations=1)
         else:
             erosion = image
         return erosion
 
+    def resize(self, image):
+        image_width, image_height = image.shape
+        scale_factor_w = np.random.uniform(0.85, 1.00)
+        scale_factor_h = np.random.uniform(0.85, 1.00)
+        image_resized = cv2.resize(image, (int(image_height * scale_factor_w), int(image_width * scale_factor_h)))
+
+        return image_resized
+
     def random_resize(self, image):
         choice = np.random.choice([False, True], 1)
-        if choice:
-            image_width, image_height = image.shape
-            scale_factor_w = np.random.uniform(0.85, 1.00)
-            scale_factor_h = np.random.uniform(0.85, 1.00)
-            image_resized = cv2.resize(image, (int(image_height * scale_factor_w), int(image_width * scale_factor_h)))
+        if choice[0]:
+            image_resized = self.resize(image)
         else:
             image_resized = image
+
+        return image_resized
+
+    def ratioed_resize(self, image):
+        image_width, image_height = image.shape
+        scale_factor = np.random.uniform(0.50, 1.00)
+        image_resized = cv2.resize(image, (int(image_height * scale_factor), int(image_width * scale_factor)))
 
         return image_resized
 
     def random_radioed_resize(self, image):
         choice = np.random.choice([False, True], 1)
-        if choice:
-            image_width, image_height = image.shape
-            scale_factor = np.random.uniform(0.50, 1.00)
-            image_resized = cv2.resize(image, (int(image_height * scale_factor), int(image_width * scale_factor)))
+        if choice[0]:
+            image_resized = self.ratioed_resize(image)
         else:
             image_resized = image
 
         return image_resized
 
+    def little_rotation(self, image):
+        inverted = ImageOps.invert(Image.fromarray(image))
+        inverted = np.array(inverted)
+        (h, w) = inverted.shape[:2]
+        center = (w // 2, h // 2)
+        rotation_matrix = cv2.getRotationMatrix2D(center, np.random.uniform(-5, 5), 1.0)
+        rotated = cv2.warpAffine(inverted, rotation_matrix, (w, h))
+        rotated = np.array(ImageOps.invert(Image.fromarray(rotated)))
+
+        return rotated
+
     def random_little_rotation(self, image):
         choice = np.random.choice([False, True], 1)
-        if choice:
-            inverted = ImageOps.invert(Image.fromarray(image))
-            inverted = np.array(inverted)
-            (h, w) = inverted.shape[:2]
-            center = (w // 2, h // 2)
-            rotation_matrix = cv2.getRotationMatrix2D(center, np.random.uniform(-5, 5), 1.0)
-            rotated = cv2.warpAffine(inverted, rotation_matrix, (w, h))
-            rotated = np.array(ImageOps.invert(Image.fromarray(rotated)))
-
+        if choice[0]:
+            rotated = self.little_rotation(image)
         else:
             rotated = image
 
         return rotated
 
-    # def random_skew(self, image):
-    #     choice = np.random.choice([0, 1, ], 1)
-    #     pass
+    def filling(self, thresh_image):
+        filling = cv2.floodFill(thresh_image, None, (0, 0), 255)[2]
+        filling[filling == 1] = 255
+
+        return filling
 
     def random_filling(self, image):
         choice = np.random.choice([False, True], 1)
         _, thresh = cv2.threshold(image, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-        if choice:
-            filling = cv2.floodFill(thresh, None, (0, 0), 255)[2]
-            filling[filling == 1] = 255
+        if choice[0]:
+            filling = self.filling(thresh)
         else:
             filling = image
         return filling
 
+    def threshold(self, image):
+        _, thresh = cv2.threshold(image, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+
+        return thresh
+
     def random_threshold(self, image):
         choice = np.random.choice([False, True], 1)
-        if choice:
-            _, thresh = cv2.threshold(image, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+        if choice[0]:
+            thresh = self.threshold(image)
         else:
             thresh = image
         return thresh
 
-    def random_gaussian(self, image):
+    def blur(self, image):
+        kernelW = np.random.choice([3, 5, 7], 1)
+        kernelH = np.random.choice([3, 5, 7], 1)
+        blur = cv2.GaussianBlur(image, (kernelH[0], kernelW[0]), 0)
+
+        return blur
+
+    def random_blur(self, image):
         choice = np.random.choice([False, True], 1)
-        if choice:
-            kernelW = np.random.choice([3, 5, 7], 1)
-            kernelH = np.random.choice([3, 5, 7], 1)
-            blur = cv2.GaussianBlur(image, (kernelH[0], kernelW[0]), 0)
+        if choice[0]:
+            blur = self.blur(image)
         else:
             blur = image
 
         return blur
 
+    def flip(self, image):
+        return cv2.flip(image, 1)
+
     def random_flip(self, image):
         choice = np.random.choice([False, True], 1)
-        if choice:
-            flipped = cv2.flip(image, 1)
+        if choice[0]:
+            flipped = self.flip(image)
         else:
             flipped = image
 
@@ -248,6 +288,31 @@ class DatasetAugmenter:
             thresh = self.random_filling(resize)
         else:
             thresh = self.random_threshold(resize)
-        blurred = self.random_gaussian(thresh)
+        blurred = self.random_blur(thresh)
         final_image = self.trim_borders(Image.fromarray(blurred.astype('uint8'), 'L'))
+        return final_image
+
+    def random_transformation_from_code(self, image, transformation_code):
+        transformed_image = image
+        if transformation_code & 1:
+            transformed_image = self.flip(transformed_image)
+        if transformation_code & 2:
+            transformed_image = self.rotation(transformed_image)
+        if transformation_code & 4:
+            transformed_image = self.erosion(transformed_image)
+        if transformation_code & 8:
+            transformed_image = self.quality_loss(transformed_image)
+        if transformation_code & 16:
+            transformed_image = self.little_rotation(transformed_image)
+        if transformation_code & 32:
+            transformed_image = self.resize(transformed_image)
+        if transformation_code & 64:
+            transformed_image = self.ratioed_resize(transformed_image)
+        if transformation_code & 128:
+            transformed_image = self.filling(transformed_image)
+        else:
+            transformed_image = self.threshold(transformed_image)
+        if transformation_code & 256:
+            transformed_image = self.blur(transformed_image)
+        final_image = self.trim_borders(Image.fromarray(transformed_image.astype('uint8'), 'L'))
         return final_image
