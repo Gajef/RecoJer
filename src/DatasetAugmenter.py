@@ -125,8 +125,8 @@ class DatasetAugmenter:
         return result
 
     def random_quality_loss(self, image):
-        choice = np.random.choice([False, True], 1)
-        if choice[0]:
+        choice = np.random.choice([False, True])
+        if choice:
             result = self.quality_loss(image)
         else:
             result = image
@@ -147,8 +147,8 @@ class DatasetAugmenter:
         return rotation
 
     def random_dilation(self, image):
-        choice = np.random.choice([False, True], 1)
-        if choice[0]:
+        choice = np.random.choice([False, True])
+        if choice:
             dilation = cv2.dilate(image, np.ones((3, 3), np.uint8), iterations=1)
         else:
             dilation = image
@@ -159,8 +159,8 @@ class DatasetAugmenter:
         return cv2.erode(image, np.ones((3, 3), np.uint8), iterations=1)
 
     def random_erosion(self, image):
-        choice = np.random.choice([False, True], 1)
-        if choice[0]:
+        choice = np.random.choice([False, True])
+        if choice:
             erosion = cv2.erode(image, np.ones((3, 3), np.uint8), iterations=1)
         else:
             erosion = image
@@ -175,8 +175,8 @@ class DatasetAugmenter:
         return image_resized
 
     def random_resize(self, image):
-        choice = np.random.choice([False, True], 1)
-        if choice[0]:
+        choice = np.random.choice([False, True])
+        if choice:
             image_resized = self.resize(image)
         else:
             image_resized = image
@@ -191,8 +191,8 @@ class DatasetAugmenter:
         return image_resized
 
     def random_radioed_resize(self, image):
-        choice = np.random.choice([False, True], 1)
-        if choice[0]:
+        choice = np.random.choice([False, True])
+        if choice:
             image_resized = self.ratioed_resize(image)
         else:
             image_resized = image
@@ -211,8 +211,8 @@ class DatasetAugmenter:
         return rotated
 
     def random_little_rotation(self, image):
-        choice = np.random.choice([False, True], 1)
-        if choice[0]:
+        choice = np.random.choice([False, True])
+        if choice:
             rotated = self.little_rotation(image)
         else:
             rotated = image
@@ -226,9 +226,9 @@ class DatasetAugmenter:
         return filling
 
     def random_filling(self, image):
-        choice = np.random.choice([False, True], 1)
+        choice = np.random.choice([False, True])
         _, thresh = cv2.threshold(image, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-        if choice[0]:
+        if choice:
             filling = self.filling(thresh)
         else:
             filling = image
@@ -240,8 +240,8 @@ class DatasetAugmenter:
         return thresh
 
     def random_threshold(self, image):
-        choice = np.random.choice([False, True], 1)
-        if choice[0]:
+        choice = np.random.choice([False, True])
+        if choice:
             thresh = self.threshold(image)
         else:
             thresh = image
@@ -255,8 +255,8 @@ class DatasetAugmenter:
         return blur
 
     def random_blur(self, image):
-        choice = np.random.choice([False, True], 1)
-        if choice[0]:
+        choice = np.random.choice([False, True])
+        if choice:
             blur = self.blur(image)
         else:
             blur = image
@@ -267,8 +267,8 @@ class DatasetAugmenter:
         return cv2.flip(image, 1)
 
     def random_flip(self, image):
-        choice = np.random.choice([False, True], 1)
-        if choice[0]:
+        choice = np.random.choice([False, True])
+        if choice:
             flipped = self.flip(image)
         else:
             flipped = image
