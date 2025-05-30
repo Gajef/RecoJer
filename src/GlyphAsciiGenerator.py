@@ -51,9 +51,9 @@ class GlyphAsciiGenerator:
         glyph = self.augmenter.trim_borders(glyph)
         x, y = glyph.size
         ratio = x/y
-        if ratio > 1.2:
+        if ratio > 1.3:
             dst_folder = "Wide"
-        elif ratio < 0.8:
+        elif ratio < 0.7:
             dst_folder = "Tall"
         else:
             dst_folder = "Square"
