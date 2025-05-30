@@ -41,6 +41,10 @@ class PathsProvider:
 
         return path
 
+    def get_folders(self, path):
+        folders = list(filter(lambda file: os.path.isdir(f"{path}/{file}") ,os.listdir(path)))
+        return folders
+
     def get_files_and_folders_in_order(self, path):
         files_and_folders_paths = os.listdir(path)
         return natsort.natsorted(files_and_folders_paths)
@@ -60,3 +64,11 @@ class PathsProvider:
         files_paths = self.get_files_by_extension_in_order(path, extension)
         files_paths = list(map(lambda file_path: path + "/" + file_path, files_paths))
         return files_paths
+
+    def get_files_path_by_extension_in_order_recursive(self, path, extension):
+        files_paths = []
+        for folder in self.get_folders(path):
+            files_paths += self.get_files_path_by_extension_in_order(f"{path}/{folder}", extension)
+
+        return files_paths
+
