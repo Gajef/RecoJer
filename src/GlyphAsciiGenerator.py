@@ -38,7 +38,30 @@ class GlyphAsciiGenerator:
             for gardiner in self.mapper.gardiner2unicode.keys():
                 generator.generate_image(self.mapper.to_unicode_char(gardiner),
                                          save_path_png=f"{self.paths.ASCII_GLYPHS}/{gardiner}_{generator_index}.png")
+                self.classify_glyph(f"{self.paths.ASCII_GLYPHS}/{gardiner}_{generator_index}.png")
             generator_index += 1
+
+        # Remove wrong glyphs
+        os.remove(f"{self.paths.ASCII_GLYPHS}/Tall/D52_3.png")
+        os.remove(f"{self.paths.ASCII_GLYPHS}/Tall/D52A_3.png")
+        os.remove(f"{self.paths.ASCII_GLYPHS}/Tall/D53_3.png")
+
+    def classify_glyph(self, path):
+        glyph = Image.open(path).convert('L')
+        glyph = self.augmenter.trim_borders(glyph)
+        x, y = glyph.size
+        ratio = x/y
+        if ratio > 1.2:
+            dst_folder = "Wide"
+        elif ratio < 0.8:
+            dst_folder = "Tall"
+        else:
+            dst_folder = "Square"
+
+        glyph_name = path.split("/")[-1]
+        dst_path = os.path.join(self.paths.ASCII_GLYPHS, dst_folder, glyph_name)
+        os.replace(path, dst_path)
+        glyph.close()
 
     def generate_train_val_pt_pictures(self, path, n_train, n_val, replace=True):
         # path = self.path.ASCII_GLYPHS
@@ -50,7 +73,7 @@ class GlyphAsciiGenerator:
     def generate_pt_pictures(self, path, n, dst):
         rng = np.random.default_rng()
         for i in range(n):
-            img_paths = self.paths.get_files_path_by_extension_in_order(path, "png")
+            img_paths = self.paths.get_files_path_by_extension_in_order_recursive(path, "png")
             rng.shuffle(img_paths)
             self.generate_picture_pyramid_text(img_paths, dst)
 
@@ -64,7 +87,8 @@ class GlyphAsciiGenerator:
             os.remove(path)
 
     def generate_picture_pyramid_text(self, glyphs_paths_list, path):
-        img_height, img_width = (2800, 1700)
+        img_shape = (2800, 1700)
+        img_height, img_width = img_shape
         margin = 150
         column_width = 100
 
@@ -75,27 +99,16 @@ class GlyphAsciiGenerator:
             column_width, img_height, img_width, margin, real_width)
 
         while len(glyphs_paths_list) > 0:
-            next_image, next_image_path, is_glyph = self.choose_next_image(glyphs_paths_list)
+            glyphs_annotations, next_image_height = self.paste_next_glyphs(glyphs_paths_list,
+                                                                           white_canvas,
+                                                                           plotting_index,
+                                                                           column_width,
+                                                                           img_shape)
 
-            (next_image_width, next_image_height) = next_image.size
-            if next_image_width > 60:
-                resize_factor = 60 / next_image_width
-                next_image = next_image.resize((int(next_image_width * resize_factor), int(next_image_height * resize_factor)))
-                (next_image_width, next_image_height) = next_image.size
-
-            white_canvas.paste(next_image, (plotting_index[0] + (column_width - next_image_width)//2, plotting_index[1]))
-            if is_glyph:
-                glyph_gardiner_id = next_image_path.split("/")[-1].split("_")[0]
-                glyph_class = self.files_generator.glyph_class_dictionary.get(glyph_gardiner_id)
-                normalized_x = (plotting_index[0] + (column_width - next_image_width)//2 + (next_image_width/2)) / img_width
-                normalized_y = (plotting_index[1] + (next_image_height/2)) / img_height
-                normalized_width = next_image_width / img_width
-                normalized_height = next_image_height / img_height
-                annotations += [f"{glyph_class} {normalized_x:.6f} {normalized_y:.6f} {normalized_width:.6f} {normalized_height:.6f}"]
-            next_image.close()
+            annotations += glyphs_annotations
 
             if plotting_index[1] + next_image_height <= real_height:
-                glyph_separation = random.randint(2, 10)
+                glyph_separation = random.randint(1, 10)
                 plotting_index = (plotting_index[0], plotting_index[1] + next_image_height + glyph_separation)
             elif plotting_index[1] + next_image_height > real_height and len(plotting_column_positions) != 0:
                 plotting_index = (plotting_index[0] + plotting_column_positions.pop(), 440)
@@ -113,6 +126,15 @@ class GlyphAsciiGenerator:
         white_canvas.save(f"{self.paths.ASCII_AUGMENTATION}/images{path}/pt_{picture_id}.png")
         white_canvas.close()
         self.files_generator.generate_txt(annotations, path, f"pt_{picture_id}.txt")
+
+    def paste_next_glyphs(self, glyphs_paths_list, white_canvas, plotting_index, column_width, img_shape):
+        next_image, is_glyph, image_annotations = self.choose_next_image(glyphs_paths_list, plotting_index, column_width, img_shape)
+
+        (next_image_width, next_image_height) = next_image.size
+        white_canvas.paste(next_image, (plotting_index[0] + (column_width - next_image_width) // 2, plotting_index[1]))
+        next_image.close()
+
+        return image_annotations, next_image_height
 
     def initialize_picture(self, column_width, img_height, img_width, margin, real_width):
         withe_canvas = np.full((img_height, img_width), 255, dtype=np.uint8)
@@ -137,18 +159,17 @@ class GlyphAsciiGenerator:
 
         return complete_picture, plotting_column_positions, plotting_index, white_canvas, annotations, picture_id
 
-    def choose_next_image(self, glyphs_paths_list):
+    def choose_next_image(self, glyphs_paths_list, plotting_index, column_width, img_shape):
         is_glyph = False
         options = ["glyph", "blank", "line", "h_text", "v_text", "erased", "dots"]
         choice = np.random.choice(options, 1, p=[0.6, 0.25, 0.05, 0.0, 0.0, 0.05, 0.05])[0]
+        annotations = ""
         if choice == "glyph":
-            next_image_path = glyphs_paths_list.pop(0)
-            next_image = Image.open(next_image_path).convert("L")
-            next_image = self.augmenter.random_transformation(np.array(next_image))
+            next_image, annotations = self.choose_next_glyphs(glyphs_paths_list, plotting_index, column_width, img_shape)
             is_glyph = True
         elif choice == "blank" or choice == "line" or choice == "erased" or choice == "dots":
             next_image_path = f"{self.paths.EXTRA_ASCII_IMAGES}/{choice}.png"
-            next_image = Image.open(next_image_path)
+            next_image = self.resize_to_width(Image.open(next_image_path))
         elif choice == "h_text":
             next_image = ...
         elif choice == "v_text":
@@ -156,8 +177,91 @@ class GlyphAsciiGenerator:
         else:
             next_image_path = f"{self.paths.EXTRA_ASCII_IMAGES}/{choice}.png"
             next_image = Image.open(next_image_path)
-        return next_image, next_image_path, is_glyph
 
+        return next_image, is_glyph, annotations
+
+    def choose_next_glyphs(self, glyphs_paths_list, plotting_index, column_width, img_shape):
+        annotations = []
+        transformation_code = np.random.randint(0, 511)
+        next_image_path = glyphs_paths_list.pop(0)
+        next_image = Image.open(next_image_path).convert("L")
+        next_image = self.augmenter.random_transformation_from_code(np.array(next_image), transformation_code)
+
+        do_stack = np.random.choice([False, True])
+
+        if do_stack:
+            glyph_type = next_image_path.split("/")[-2]
+            extra_glyphs_paths = self.paths.get_files_path_by_extension_in_order(f"{self.paths.ASCII_GLYPHS}/{glyph_type}", "png")
+            extra_glyph_path = np.random.choice(extra_glyphs_paths)
+            extra_glyph = Image.open(extra_glyph_path).convert("L")
+            extra_glyph = self.augmenter.random_transformation_from_code(np.array(extra_glyph), transformation_code)
+
+            was_rotated = transformation_code & 2
+
+            glyph_separation = np.random.randint(1, 10)
+
+            if (glyph_type == "Tall" and not was_rotated) or (glyph_type == "Wide" and was_rotated):
+                # Apilar horizontalmente
+                composition_width = next_image.size[0] + glyph_separation + extra_glyph.size[0]
+                if composition_width > 60:
+                    resize_factor = (60 - glyph_separation) / composition_width
+                    next_image = next_image.resize((int(next_image.size[0] * resize_factor), int(next_image.size[1] * resize_factor)))
+                    extra_glyph = extra_glyph.resize((int(extra_glyph.size[0] * resize_factor), int(extra_glyph.size[1] * resize_factor)))
+                    composition_width = next_image.size[0] + glyph_separation + extra_glyph.size[0]
+                composition =  Image.new('L', (composition_width, np.max([next_image.size[1], extra_glyph.size[1]])), color = 255)
+                composition_height = composition.size[1]
+                composition.paste(next_image, (0, composition_height//2 - next_image.size[1]//2))
+                composition.paste(extra_glyph, (glyph_separation + next_image.size[0], int(composition_height/2 - extra_glyph.size[1]/2)))
+
+                # Anotaciones
+                annotations += self.generate_annotations(plotting_index, column_width, img_shape, composition.size, next_image_path, next_image, (0, 0))
+                annotations += self.generate_annotations(plotting_index, column_width, img_shape, composition.size, extra_glyph_path, extra_glyph, (next_image.size[0] + glyph_separation, 0))
+
+
+            elif (glyph_type == "Wide" and not was_rotated) or (glyph_type == "Tall" and was_rotated):
+                # Apilar verticalmente
+                next_image = self.resize_to_width(next_image)
+                extra_glyph = self.resize_to_width(extra_glyph)
+                composition =  Image.new('L', (np.max([next_image.size[0], extra_glyph.size[0]]), next_image.size[1] + glyph_separation + extra_glyph.size[1]), color = 255)
+                composition_width, composition_height = composition.size
+                composition.paste(next_image, (composition_width//2 - next_image.size[0]//2, 0))
+                composition.paste(extra_glyph, (0, next_image.size[1] + glyph_separation))
+                annotations += self.generate_annotations(plotting_index, column_width, img_shape, next_image.size, next_image_path, next_image, (0, 0))
+                annotations += self.generate_annotations(plotting_index, column_width, img_shape, (composition.size[0], extra_glyph.size[1]), extra_glyph_path, extra_glyph, (0, next_image.size[1] + glyph_separation))
+            else:
+                # Se deja como está previsiblemente (o se aplica mixup)
+                composition = self.resize_to_width(next_image)
+                annotations += self.generate_annotations(plotting_index, column_width, img_shape, composition.size, next_image_path, composition, (0, 0))
+
+        else:
+            composition = self.resize_to_width(next_image)
+            annotations += self.generate_annotations(plotting_index, column_width, img_shape, composition.size, next_image_path, composition, (0, 0))
+
+        return composition, annotations
+
+    def resize_to_width(self, image, width=60):
+        (image_width, image_height) = image.size
+        if image_width > width:
+            resize_factor = width / image_width
+            image = image.resize(
+                (int(image_width * resize_factor), int(image_height * resize_factor)))
+
+        return image
+
+    def generate_annotations(self, plotting_index, column_width, img_shape, composition_size, pasted_image_path, pasted_image, paste_position):
+        (img_height, img_width) = img_shape
+        (pasted_image_width, pasted_image_height) = pasted_image.size
+        (paste_x, paste_y) = paste_position
+        (composition_width, composition_height) = composition_size
+        glyph_gardiner_id = pasted_image_path.split("/")[-1].split("_")[0]
+        glyph_class = self.files_generator.glyph_class_dictionary.get(glyph_gardiner_id)
+        normalized_x = (plotting_index[0] + ((column_width - composition_width) // 2) + (pasted_image_width / 2) + paste_x) / img_width
+        normalized_y = (plotting_index[1] + (composition_height / 2) + paste_y) / img_height
+        normalized_width = pasted_image_width / img_width
+        normalized_height = pasted_image_height / img_height
+        annotation = [f"{glyph_class} {normalized_x:.6f} {normalized_y:.6f} {normalized_width:.6f} {normalized_height:.6f}"]
+
+        return annotation
 
     def plot_annotations(self, picture, init_pos, blocks, margin, real_width):
         picture_draw = ImageDraw.Draw(picture)
