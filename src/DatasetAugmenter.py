@@ -186,6 +186,13 @@ class DatasetAugmenter:
     def flip(self, image):
         return cv2.flip(image, 1)
 
+    def ext_border(self, image):
+        binary_image = self.threshold(image)
+        canny_borders = cv2.Canny(binary_image, 100, 200)
+        gray_img = (canny_borders * 0.75).astype(np.uint8)
+        borders = np.invert(gray_img)
+        return borders
+
     def random_transformation_from_code(self, image, transformation_code):
         transformed_image = image
         if transformation_code & 1:
@@ -208,5 +215,7 @@ class DatasetAugmenter:
             transformed_image = self.threshold(transformed_image)
         if transformation_code & 256:
             transformed_image = self.blur(transformed_image)
+        if transformation_code & 512:
+            transformed_image = self.ext_border(transformed_image)
         final_image = self.trim_borders(Image.fromarray(transformed_image.astype('uint8'), 'L'))
         return final_image
