@@ -214,8 +214,8 @@ class DatasetAugmenter:
         else:
             transformed_image = self.threshold(transformed_image)
         if transformation_code & 256:
-            transformed_image = self.blur(transformed_image)
-        if transformation_code & 512:
             transformed_image = self.ext_border(transformed_image)
+        if transformation_code & 512:
+            transformed_image = self.blur(transformed_image)
         final_image = self.trim_borders(Image.fromarray(transformed_image.astype('uint8'), 'L'))
         return final_image
