@@ -5,7 +5,6 @@ import cv2
 import numpy as np
 from PIL import Image
 from PIL import ImageOps
-from mpl_toolkits.mplot3d.proj3d import transform
 
 from GlyphdatasetPreprocessor import GlyphdatasetPreprocessor
 from PathsProvider import PathsProvider
@@ -124,47 +123,12 @@ class DatasetAugmenter:
 
         return result
 
-    def random_quality_loss(self, image):
-        choice = np.random.choice([False, True])
-        if choice:
-            result = self.quality_loss(image)
-        else:
-            result = image
-
-        return result
-
     def rotation(self, image):
         choice = np.random.choice([cv2.ROTATE_90_CLOCKWISE, cv2.ROTATE_90_COUNTERCLOCKWISE], 1)
         return cv2.rotate(image, choice[0])
 
-    def random_rotation(self, image):
-        choice = np.random.choice([0, cv2.ROTATE_90_CLOCKWISE, cv2.ROTATE_90_COUNTERCLOCKWISE], 1)
-        if choice == 0:
-            rotation = image
-        else:
-            rotation = cv2.rotate(image, choice[0])
-
-        return rotation
-
-    def random_dilation(self, image):
-        choice = np.random.choice([False, True])
-        if choice:
-            dilation = cv2.dilate(image, np.ones((3, 3), np.uint8), iterations=1)
-        else:
-            dilation = image
-
-        return dilation
-
     def erosion(self, image):
         return cv2.erode(image, np.ones((3, 3), np.uint8), iterations=1)
-
-    def random_erosion(self, image):
-        choice = np.random.choice([False, True])
-        if choice:
-            erosion = cv2.erode(image, np.ones((3, 3), np.uint8), iterations=1)
-        else:
-            erosion = image
-        return erosion
 
     def resize(self, image):
         image_width, image_height = image.shape
@@ -174,28 +138,10 @@ class DatasetAugmenter:
 
         return image_resized
 
-    def random_resize(self, image):
-        choice = np.random.choice([False, True])
-        if choice:
-            image_resized = self.resize(image)
-        else:
-            image_resized = image
-
-        return image_resized
-
     def ratioed_resize(self, image):
         image_width, image_height = image.shape
         scale_factor = np.random.uniform(0.50, 1.00)
         image_resized = cv2.resize(image, (int(image_height * scale_factor), int(image_width * scale_factor)))
-
-        return image_resized
-
-    def random_radioed_resize(self, image):
-        choice = np.random.choice([False, True])
-        if choice:
-            image_resized = self.ratioed_resize(image)
-        else:
-            image_resized = image
 
         return image_resized
 
@@ -207,15 +153,6 @@ class DatasetAugmenter:
         rotation_matrix = cv2.getRotationMatrix2D(center, np.random.uniform(-5, 5), 1.0)
         rotated = cv2.warpAffine(inverted, rotation_matrix, (w, h))
         rotated = np.array(ImageOps.invert(Image.fromarray(rotated)))
-
-        return rotated
-
-    def random_little_rotation(self, image):
-        choice = np.random.choice([False, True])
-        if choice:
-            rotated = self.little_rotation(image)
-        else:
-            rotated = image
 
         return rotated
 
@@ -239,14 +176,6 @@ class DatasetAugmenter:
 
         return thresh
 
-    def random_threshold(self, image):
-        choice = np.random.choice([False, True])
-        if choice:
-            thresh = self.threshold(image)
-        else:
-            thresh = image
-        return thresh
-
     def blur(self, image):
         kernelW = np.random.choice([3, 5, 7], 1)
         kernelH = np.random.choice([3, 5, 7], 1)
@@ -254,43 +183,8 @@ class DatasetAugmenter:
 
         return blur
 
-    def random_blur(self, image):
-        choice = np.random.choice([False, True])
-        if choice:
-            blur = self.blur(image)
-        else:
-            blur = image
-
-        return blur
-
     def flip(self, image):
         return cv2.flip(image, 1)
-
-    def random_flip(self, image):
-        choice = np.random.choice([False, True])
-        if choice:
-            flipped = self.flip(image)
-        else:
-            flipped = image
-
-        return flipped
-
-    def random_transformation(self, image):
-        flip = self.random_flip(image)
-        rotation = self.random_rotation(flip)
-        erosion = self.random_erosion(rotation)
-        quality_loss = self.random_quality_loss(erosion)
-        little_rotation = self.random_little_rotation(quality_loss)
-        resize = self.random_resize(little_rotation)
-        resize = self.random_radioed_resize(resize)
-        choice = np.random.choice([0, 1], 1)
-        if choice == 0:
-            thresh = self.random_filling(resize)
-        else:
-            thresh = self.random_threshold(resize)
-        blurred = self.random_blur(thresh)
-        final_image = self.trim_borders(Image.fromarray(blurred.astype('uint8'), 'L'))
-        return final_image
 
     def random_transformation_from_code(self, image, transformation_code):
         transformed_image = image
