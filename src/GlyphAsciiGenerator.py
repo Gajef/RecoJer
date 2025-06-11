@@ -162,16 +162,18 @@ class GlyphAsciiGenerator:
     def choose_next_image(self, glyphs_paths_list, plotting_index, column_width, img_shape):
         is_glyph = False
         options = ["glyph", "blank", "line", "h_text", "v_text", "erased", "dots"]
-        choice = np.random.choice(options, 1, p=[0.6, 0.25, 0.05, 0.0, 0.0, 0.05, 0.05])[0]
+        choice = np.random.choice(options, p=[0.6, 0.225, 0.05, 0.025, 0.0, 0.05, 0.05])
         annotations = ""
         if choice == "glyph":
             next_image, annotations = self.choose_next_glyphs(glyphs_paths_list, plotting_index, column_width, img_shape)
             is_glyph = True
         elif choice == "blank" or choice == "line" or choice == "erased" or choice == "dots":
+            if choice == "erased":
+                choice = np.random.choice(["erased", "erased1", "erased2", "erased3", "erased4"])
             next_image_path = f"{self.paths.EXTRA_ASCII_IMAGES}/{choice}.png"
             next_image = self.resize_to_width(Image.open(next_image_path))
         elif choice == "h_text":
-            next_image = ...
+            next_image = self._generate_random_text_location_img("horizontal")
         elif choice == "v_text":
             next_image = ...
         else:
@@ -182,7 +184,7 @@ class GlyphAsciiGenerator:
 
     def choose_next_glyphs(self, glyphs_paths_list, plotting_index, column_width, img_shape):
         annotations = []
-        transformation_code = np.random.randint(0, 511)
+        transformation_code = np.random.randint(0, 1023)
         next_image_path = glyphs_paths_list.pop(0)
         next_image = Image.open(next_image_path).convert("L")
         next_image = self.augmenter.random_transformation_from_code(np.array(next_image), transformation_code)
@@ -259,6 +261,7 @@ class GlyphAsciiGenerator:
         normalized_y = (plotting_index[1] + (composition_height / 2) + paste_y) / img_height
         normalized_width = pasted_image_width / img_width
         normalized_height = pasted_image_height / img_height
+        # annotation = [f"{glyph_class} {normalized_x:.6f} {normalized_y:.6f} {normalized_width:.6f} {normalized_height:.6f}"]
         annotation = [f"0 {normalized_x:.6f} {normalized_y:.6f} {normalized_width:.6f} {normalized_height:.6f}"]
 
         return annotation
@@ -267,6 +270,7 @@ class GlyphAsciiGenerator:
         picture_draw = ImageDraw.Draw(picture)
         font = ImageFont.truetype(self.paths.FONTS + "/Tekton Pro Regular.otf", 50)
         font_columns = ImageFont.truetype(self.paths.FONTS + "/Tekton Pro Regular.otf", 30)
+        font_small = ImageFont.truetype(self.paths.FONTS + "/Tekton Pro Regular.otf", 20)
         letters = list(string.ascii_uppercase)
 
         plotting_index_top = (init_pos[0], init_pos[1] -185)
@@ -285,8 +289,13 @@ class GlyphAsciiGenerator:
             plotting_index_bottom = (plotting_index_top[0] + width , plotting_index_top[1] + 75)
             picture_draw.rectangle((plotting_index_top, plotting_index_bottom), outline="black", width=3)
             for column in range(0, block):
+                # Texto grande
                 plotting_text = (40 + plotting_index_top[0] + column * 100, plotting_index_top[1] + 25)
                 picture_draw.text(plotting_text, f"{np.random.choice(letters)}", font=font_columns)
+                # Texto abajo pequeño
+                plotting_text = (plotting_text[0]+13, plotting_text[1] + 85)
+                picture_draw.text(plotting_text, f"{self._generate_random_text_location()}", font=font_small, anchor="ma")
+
 
             # Cuadrado estrecho
             plotting_index_top = (plotting_index_top[0], plotting_index_top[1] + 73)
@@ -297,6 +306,8 @@ class GlyphAsciiGenerator:
             plotting_index_top = (plotting_index_top[0], plotting_index_top[1] + 14)
             plotting_index_bottom = (plotting_index_top[0] + width , plotting_index_top[1] + 2350)
             picture_draw.rectangle((plotting_index_top, plotting_index_bottom), outline="black", width=3)
+
+            self._plot_border_text(plotting_index_top, picture_draw)
 
             plotting_index_top = (plotting_index_bottom[0] + 100, init_pos[1] - 185)
 
@@ -335,4 +346,54 @@ class GlyphAsciiGenerator:
         characters = string.ascii_uppercase + string.digits
         image_id =  ''.join(np.random.choice(list(characters)) for _ in range(6))
         return image_id
+
+    def _generate_random_text_location(self):
+        room = np.random.choice(["B", "Bs", "P", "A", "SP", "C", "Cs", "Cm", "Cn", "V", "APs", "APn", "fr."])
+        wall = np.random.choice(["E", "Eg", "Eh", "iB", "iE", "iL", "iN", "iS", "iW", "N", "Ne", "Nw", "Nwh", "S", "Se", "Sw", "Swh",
+                    "W", "Wg", "Wg"])
+        section = np.random.choice(["A", "B", "C", "D", "E", "F", ""], p = [0.06, 0.06, 0.06, 0.06, 0.06, 0.06, 0.64])
+        register = np.random.choice(["i", "ii", "iii", "iv", "v", ""], p = [0.16, 0.16, 0.16, 0.16, 0.16, 0.2])
+
+        location = f"{room}/{wall} {section}\n{register} {np.random.randint(500)}"
+
+        return location
+
+    def _generate_random_text_location_img(self, orientation):
+        if orientation == "horizontal":
+            location_text = self._generate_random_text_location()
+            font = ImageFont.truetype(self.paths.FONTS + "/Tekton Pro Regular.otf", 20)
+            text_image = Image.fromarray(np.full((200, 200), 255)).convert('L')
+            image_draw = ImageDraw.Draw(text_image)
+            image_draw.text((0, 0), location_text, font=font)
+            text_image = self.augmenter.trim_borders(text_image)
+
+            return text_image
+
+    def _plot_border_text(self, plot_index, picture_draw):
+        font_big = ImageFont.truetype(self.paths.FONTS + "/Tekton Pro Regular.otf", 30)
+        font_small = ImageFont.truetype(self.paths.FONTS + "/Tekton Pro Regular.otf", 20)
+
+        # Anotación superior
+        top_text = f"{np.random.randint(1, 10)}"
+        picture_draw.text((plot_index[0] - 30, plot_index[1] + 90), top_text, font=font_big)
+
+        bottom_text = f"{np.random.randint(1, 1500)}{np.random.choice(list(string.ascii_lowercase))}"
+        picture_draw.text((plot_index[0] - 10, plot_index[1] + 135), bottom_text, font=font_small, anchor="rs")
+
+        # Anotación media
+        extra_space = np.random.randint(250, 750)
+        top_text = f"{np.random.randint(1, 10)}"
+        picture_draw.text((plot_index[0] - 30, plot_index[1] + 90 + extra_space), top_text, font=font_big)
+
+        bottom_text = f"{np.random.randint(1, 1500)}{np.random.choice(list(string.ascii_lowercase))}"
+        picture_draw.text((plot_index[0] - 10, plot_index[1] + 135 + extra_space), bottom_text, font=font_small, anchor="rs")
+
+        # Anotación inferior
+        extra_space = np.random.randint(1000, 2100)
+        top_text = f"{np.random.randint(1, 10)}"
+        picture_draw.text((plot_index[0] - 30, plot_index[1] + 90 + extra_space), top_text, font=font_big)
+
+        bottom_text = f"{np.random.randint(1, 1500)}{np.random.choice(list(string.ascii_lowercase))}"
+        picture_draw.text((plot_index[0] - 10, plot_index[1] + 135 + extra_space), bottom_text, font=font_small, anchor="rs")
+
 
