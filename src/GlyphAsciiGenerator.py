@@ -259,7 +259,7 @@ class GlyphAsciiGenerator:
         normalized_y = (plotting_index[1] + (composition_height / 2) + paste_y) / img_height
         normalized_width = pasted_image_width / img_width
         normalized_height = pasted_image_height / img_height
-        annotation = [f"{glyph_class} {normalized_x:.6f} {normalized_y:.6f} {normalized_width:.6f} {normalized_height:.6f}"]
+        annotation = [f"0 {normalized_x:.6f} {normalized_y:.6f} {normalized_width:.6f} {normalized_height:.6f}"]
 
         return annotation
 
