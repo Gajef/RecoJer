@@ -362,7 +362,7 @@ class GlyphAsciiGenerator:
         if orientation == "horizontal":
             location_text = self._generate_random_text_location()
             font = ImageFont.truetype(self.paths.FONTS + "/Tekton Pro Regular.otf", 20)
-            text_image = Image.fromarray(np.full((200, 200), 255), dtype=np.uint8).convert('L')
+            text_image = Image.fromarray(np.full((200, 200), 255).astype(np.uint8)).convert('L')
             image_draw = ImageDraw.Draw(text_image)
             image_draw.text((0, 0), location_text, font=font)
             text_image = self.augmenter.trim_borders(text_image)
