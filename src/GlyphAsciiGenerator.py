@@ -170,6 +170,8 @@ class GlyphAsciiGenerator:
         elif choice == "blank" or choice == "line" or choice == "erased" or choice == "dots":
             if choice == "erased":
                 choice = np.random.choice(["erased", "erased1", "erased2", "erased3", "erased4"])
+            elif choice == "dots":
+                choice = np.random.choice(["dots", "dots1", "dots2", "dots3"])
             next_image_path = f"{self.paths.EXTRA_ASCII_IMAGES}/{choice}.png"
             next_image = self.resize_to_width(Image.open(next_image_path))
         elif choice == "h_text":
@@ -395,5 +397,3 @@ class GlyphAsciiGenerator:
 
         bottom_text = f"{np.random.randint(1, 1500)}{np.random.choice(list(string.ascii_lowercase))}"
         picture_draw.text((plot_index[0] - 10, plot_index[1] + 135 + extra_space), bottom_text, font=font_small, anchor="rs")
-
-
