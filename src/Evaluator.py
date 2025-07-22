@@ -51,12 +51,12 @@ class Evaluator:
                 gt_count_list.append(len(gt_bboxes))
                 detect_count_list.append(len(detect_bboxes))
 
-            print(f"* Hay {np.sum(gt_count_list)} glifos en total (groundtruth). Media: {np.mean(gt_count_list)} por pagina")
-            print(f"* Find contours ha detectado {np.sum(detect_count_list)} glifos.  Media: {np.mean(detect_count_list)} por pagina")
-            print(f"    * {np.sum(tp_list)}/{np.sum(detect_count_list)} ({np.sum(tp_list)*100/np.sum(detect_count_list): .2f}% ) coinciden con glifos en un IoU > {iou_threshold}")
-            print(f"        * {np.sum(tp_list)}/{np.sum(gt_count_list)} ({np.sum(tp_list)*100/np.sum(gt_count_list): .2f}% ) detecciones coinciden con groundtruth ")
-            print(f"    * {np.sum(fp_list)}/{np.sum(detect_count_list)}  ({np.sum(fp_list)*100/np.sum(detect_count_list): .2f}% ) NO coinciden con glifos en un IoU > {iou_threshold}")
-            print(f"    * Media de IoUs: {np.mean(iou_mean_list): .2f}")
+        print(f"* Hay {np.sum(gt_count_list)} glifos en total (groundtruth). Media: {np.mean(gt_count_list)} por pagina")
+        print(f"* Find contours ha detectado {np.sum(detect_count_list)} glifos.  Media: {np.mean(detect_count_list)} por pagina")
+        print(f"    * {np.sum(tp_list)}/{np.sum(detect_count_list)} ({np.sum(tp_list)*100/np.sum(detect_count_list): .2f}% ) coinciden con glifos en un IoU > {iou_threshold}")
+        print(f"        * {np.sum(tp_list)}/{np.sum(gt_count_list)} ({np.sum(tp_list)*100/np.sum(gt_count_list): .2f}% ) detecciones coinciden con groundtruth ")
+        print(f"    * {np.sum(fp_list)}/{np.sum(detect_count_list)}  ({np.sum(fp_list)*100/np.sum(detect_count_list): .2f}% ) NO coinciden con glifos en un IoU > {iou_threshold}")
+        print(f"    * Media de IoUs: {np.mean(iou_mean_list): .2f}")
 
 
 
