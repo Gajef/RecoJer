@@ -13,6 +13,16 @@ class Evaluator:
         self.classifier = HogClassifier()
 
     def evaluate(self, images_folder_path, labels_folder_path, iou_threshold=0.5, label_mode = 0, yolo_model = None):
+        """
+        Evaluates classifier.
+        :param images_folder_path: Folder of annotated images.
+        :param labels_folder_path: Groundtruth of images.
+        :param iou_threshold: Threshold for diff between false and true positives.
+        :param label_mode: 0 for Glyphdataset type (w/ Hog), 1 for YOLO type (w/ Hog), >= 2 for YOLO type (w/ YOLO model).
+        :param yolo_model: YOLO model for mode 2
+        :return: Prints evaluation and saves images.
+        """
+
         images_names = os.listdir(images_folder_path)
         gt_count_list = []
         detect_count_list = []
