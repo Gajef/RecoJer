@@ -32,29 +32,31 @@ class Evaluator:
         iou_mean_list = []
 
         for image_name in images_names:
-            image_path = os.path.join(images_folder_path, image_name)
-            label_name = image_name.split('.')[0]
+            _, image_extension = os.path.splitext(image_name)
+            if image_extension == '.png' or image_extension == '.jpg' or image_extension == '.jpeg':
+                image_path = os.path.join(images_folder_path, image_name)
+                label_name = image_name.split('.')[0]
 
-            if label_mode <= 1:
-                gt_bboxes = self._read_bboxes_file(f"{labels_folder_path}/{label_name}.txt", label_mode)
-            else:
-                gt_bboxes = self._get_bboxes_from_YOLO_inference(yolo_model, image_path)
-            _, detect_bboxes = self.classifier.find_glyphs(image_path)
-            tp, fp, fn, iou_mean = self.evaluate_bboxes(gt_bboxes, detect_bboxes, image_path, iou_threshold, True)
+                if label_mode <= 1:
+                    gt_bboxes = self._read_bboxes_file(f"{labels_folder_path}/{label_name}.txt", label_mode)
+                else:
+                    gt_bboxes = self._get_bboxes_from_YOLO_inference(yolo_model, image_path)
+                _, detect_bboxes = self.classifier.find_glyphs(image_path)
+                tp, fp, fn, iou_mean = self.evaluate_bboxes(gt_bboxes, detect_bboxes, image_path, iou_threshold, True)
 
-            tp_list += [tp]
-            fp_list += [fp]
-            fn_list += [fn]
-            iou_mean_list += [iou_mean]
-            gt_count_list.append(len(gt_bboxes))
-            detect_count_list.append(len(detect_bboxes))
+                tp_list += [tp]
+                fp_list += [fp]
+                fn_list += [fn]
+                iou_mean_list += [iou_mean]
+                gt_count_list.append(len(gt_bboxes))
+                detect_count_list.append(len(detect_bboxes))
 
-        print(f"* Hay {np.sum(gt_count_list)} glifos en total (groundtruth). Media: {np.mean(gt_count_list)} por pagina")
-        print(f"* Find contours ha detectado {np.sum(detect_count_list)} glifos.  Media: {np.mean(detect_count_list)} por pagina")
-        print(f"    * {np.sum(tp_list)}/{np.sum(detect_count_list)} ({np.sum(tp_list)*100/np.sum(detect_count_list): .2f}% ) coinciden con glifos en un IoU > {iou_threshold}")
-        print(f"        * {np.sum(tp_list)}/{np.sum(gt_count_list)} ({np.sum(tp_list)*100/np.sum(gt_count_list): .2f}% ) detecciones coinciden con groundtruth ")
-        print(f"    * {np.sum(fp_list)}/{np.sum(detect_count_list)}  ({np.sum(fp_list)*100/np.sum(detect_count_list): .2f}% ) NO coinciden con glifos en un IoU > {iou_threshold}")
-        print(f"    * Media de IoUs: {np.mean(iou_mean_list): .2f}")
+            print(f"* Hay {np.sum(gt_count_list)} glifos en total (groundtruth). Media: {np.mean(gt_count_list)} por pagina")
+            print(f"* Find contours ha detectado {np.sum(detect_count_list)} glifos.  Media: {np.mean(detect_count_list)} por pagina")
+            print(f"    * {np.sum(tp_list)}/{np.sum(detect_count_list)} ({np.sum(tp_list)*100/np.sum(detect_count_list): .2f}% ) coinciden con glifos en un IoU > {iou_threshold}")
+            print(f"        * {np.sum(tp_list)}/{np.sum(gt_count_list)} ({np.sum(tp_list)*100/np.sum(gt_count_list): .2f}% ) detecciones coinciden con groundtruth ")
+            print(f"    * {np.sum(fp_list)}/{np.sum(detect_count_list)}  ({np.sum(fp_list)*100/np.sum(detect_count_list): .2f}% ) NO coinciden con glifos en un IoU > {iou_threshold}")
+            print(f"    * Media de IoUs: {np.mean(iou_mean_list): .2f}")
 
 
 
