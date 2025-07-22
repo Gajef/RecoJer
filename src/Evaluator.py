@@ -59,6 +59,12 @@ class Evaluator:
         print(f"    * {np.sum(fp_list)}/{np.sum(detect_count_list)}  ({np.sum(fp_list)*100/np.sum(detect_count_list): .2f}% ) NO coinciden con glifos en un IoU > {iou_threshold}")
         print(f"    * Media de IoUs: {np.mean(iou_mean_list): .2f}")
 
+        print(f"TP: {np.sum(tp_list)}, FP: {np.sum(fp_list)}, FN: {np.sum(fn_list)}")
+        print(f"\nAccuracy: {np.sum(tp_list)/(np.sum(tp_list) + np.sum(fp_list) + np.sum(fn_list)): .3f}")
+        print(f"Recall: {np.sum(tp_list)/(np.sum(tp_list) + np.sum(fn_list)): .3f}")
+        print(f"Precision: {np.sum(tp_list)/(np.sum(tp_list) + np.sum(fp_list)): .3f}")
+
+
 
 
     def evaluate_bboxes(self, groundtruth_bboxes, detected_bboxes, image_path, iou_threshold, verbose = False):
