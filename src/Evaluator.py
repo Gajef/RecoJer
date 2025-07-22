@@ -1,6 +1,8 @@
 import cv2
 import numpy as np
 import os
+
+from charset_normalizer import detect
 from ultralytics import YOLO
 
 from PathsProvider import PathsProvider
@@ -37,11 +39,13 @@ class Evaluator:
                 image_path = os.path.join(images_folder_path, image_name)
                 label_name = image_name.split('.')[0]
 
+                gt_bboxes = self._read_bboxes_file(f"{labels_folder_path}/{label_name}.txt", label_mode)
+
                 if label_mode <= 1:
-                    gt_bboxes = self._read_bboxes_file(f"{labels_folder_path}/{label_name}.txt", label_mode)
+                    _, detect_bboxes = self.classifier.find_glyphs(image_path)
                 else:
-                    gt_bboxes = self._get_bboxes_from_YOLO_inference(yolo_model, image_path)
-                _, detect_bboxes = self.classifier.find_glyphs(image_path)
+                    detect_bboxes = self._get_bboxes_from_YOLO_inference(yolo_model, image_path)
+
                 tp, fp, fn, iou_mean = self.evaluate_bboxes(gt_bboxes, detect_bboxes, image_path, iou_threshold, True)
 
                 tp_list += [tp]
