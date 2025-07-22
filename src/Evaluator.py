@@ -11,7 +11,7 @@ class Evaluator:
         self.paths = PathsProvider()
         self.classifier = HogClassifier()
 
-    def evaluate(self, images_folder_path, labels_folder_path, iou_threshold=0.5):
+    def evaluate(self, images_folder_path, labels_folder_path, iou_threshold=0.5, label_mode = 0):
         images_names = os.listdir(images_folder_path)
         gt_count_list = []
         detect_count_list = []
@@ -24,7 +24,7 @@ class Evaluator:
             image_path = os.path.join(images_folder_path, image_name)
             label_name = image_name.split('.')[0]
 
-            gt_bboxes = self._read_bboxes_file(f"{labels_folder_path}/{label_name}.txt")
+            gt_bboxes = self._read_bboxes_file(f"{labels_folder_path}/{label_name}.txt", label_mode)
             _, detect_bboxes = self.classifier.find_glyphs(image_path)
             tp, fp, fn, iou_mean = self.evaluate_bboxes(gt_bboxes, detect_bboxes, image_path, iou_threshold, True)
 
@@ -60,7 +60,7 @@ class Evaluator:
         false_negatives = 0
         n_detected = len(detected_bboxes)
         ious_list = []
-        image = cv2.imread(image_path, cv2.IMREAD_COLOR_RGB)
+        image = cv2.imread(image_path)
 
         for gt_bbox in groundtruth_bboxes:
             gx1, gy1, gx2, gy2 = gt_bbox
@@ -73,6 +73,7 @@ class Evaluator:
                     cv2.rectangle(image, (dt_bbox[0], dt_bbox[1]), (dt_bbox[2], dt_bbox[3]), (0, 255, 0), 1)
                     true_positives += 1
                     ious_list.append(iou)
+                    break
 
             detected_bboxes = [bbox for bbox in detected_bboxes if bbox not in overlapped_bboxes]
             if len(overlapped_bboxes) == 0:
@@ -83,6 +84,7 @@ class Evaluator:
             cv2.rectangle(image, (dt_bbox[0], dt_bbox[1]), (dt_bbox[2], dt_bbox[3]), (255, 0, 0), 1)
             false_positives += 1
 
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         cv2.imwrite(f"{self.paths.RESULTS}/contours/images/{os.path.basename(image_path)}", image)
 
         if verbose:
@@ -110,22 +112,31 @@ class Evaluator:
 
         return gt_bboxes
 
-    def _read_bboxes_file(self, file_path):
+    def _read_bboxes_file(self, file_path, label_mode =0):
         """
-        Read bounding boxes from file. File lines are written like:
-         "030000_S29.png,71,27,105,104," or like "030000_S29.png,71,27,105,104" (Glyphdataset style)
+        Read bounding boxes from file.
 
         :param file_path: Location of the file containing the bounding boxes.
+        :param label_mode: 0 for Glyphdataset style, >= 1 for YOLO style:
+             "030000_S29.png,71,27,105,104," or like "030000_S29.png,71,27,105,104" (Glyphdataset style)
+             "0 0.176176 0.165179 0.027647 0.016071" (YOLO style)
         :return: Read bounding boxes.
         """
         with open(file_path) as f:
-            gt_bboxes = f.readlines()
-            gt_bboxes = [box.split(',')[1:] for box in gt_bboxes]
-            if len(gt_bboxes[0]) > 4:
-                gt_bboxes = [box[:-1] for box in gt_bboxes if len(box) > 4]
-            gt_bboxes = [[int(coord) for coord in box] for box in gt_bboxes]
+            bboxes = f.readlines()
+            if label_mode == 0:
+                bboxes = [box.split(',')[1:] for box in bboxes]
+                if len(bboxes[0]) > 4:
+                    bboxes = [box[:-1] for box in bboxes if len(box) > 4]
+            else:
+                bboxes = [box.strip().split(' ')[1:] for box in bboxes]
+                bboxes = [[float(coord) for coord in box] for box in bboxes]
+                bboxes = [[x - w / 2, y - h / 2, x + w / 2, y + h / 2] for x, y, w, h in bboxes]
+                bboxes = [[x1 * 1700, y1 * 2800, x2 * 1700, y2 * 2800] for x1, y1, x2, y2 in bboxes]
 
-        return gt_bboxes
+            bboxes = [[int(coord) for coord in box] for box in bboxes]
+
+        return bboxes
 
     def _intersection_over_union(self, bbox1, bbox2):
         """
