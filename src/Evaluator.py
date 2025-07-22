@@ -2,9 +2,6 @@ import cv2
 import numpy as np
 import os
 
-from charset_normalizer import detect
-from ultralytics import YOLO
-
 from PathsProvider import PathsProvider
 from HogClassifier import HogClassifier
 
