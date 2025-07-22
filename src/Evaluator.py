@@ -38,7 +38,7 @@ class Evaluator:
 
                 gt_bboxes = self._read_bboxes_file(f"{labels_folder_path}/{label_name}.txt", label_mode)
 
-                if label_mode <= 1:
+                if yolo_model is None:
                     _, detect_bboxes = self.classifier.find_glyphs(image_path)
                 else:
                     detect_bboxes = self._get_bboxes_from_YOLO_inference(yolo_model, image_path)
