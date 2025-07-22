@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 import os
+from ultralytics import YOLO
 
 from PathsProvider import PathsProvider
 from HogClassifier import HogClassifier
@@ -11,7 +12,7 @@ class Evaluator:
         self.paths = PathsProvider()
         self.classifier = HogClassifier()
 
-    def evaluate(self, images_folder_path, labels_folder_path, iou_threshold=0.5, label_mode = 0):
+    def evaluate(self, images_folder_path, labels_folder_path, iou_threshold=0.5, label_mode = 0, yolo_model = None):
         images_names = os.listdir(images_folder_path)
         gt_count_list = []
         detect_count_list = []
@@ -24,7 +25,10 @@ class Evaluator:
             image_path = os.path.join(images_folder_path, image_name)
             label_name = image_name.split('.')[0]
 
-            gt_bboxes = self._read_bboxes_file(f"{labels_folder_path}/{label_name}.txt", label_mode)
+            if label_mode <= 1:
+                gt_bboxes = self._read_bboxes_file(f"{labels_folder_path}/{label_name}.txt", label_mode)
+            else:
+                gt_bboxes = self._get_bboxes_from_YOLO_inference(yolo_model, image_path)
             _, detect_bboxes = self.classifier.find_glyphs(image_path)
             tp, fp, fn, iou_mean = self.evaluate_bboxes(gt_bboxes, detect_bboxes, image_path, iou_threshold, True)
 
@@ -158,13 +162,12 @@ class Evaluator:
         iou = interArea / float(boxAArea + boxBArea - interArea)
         return iou
 
-    def get_bboxes_from_YOLO_inference(self, model, image_path):
+    def _get_bboxes_from_YOLO_inference(self, model, image_path):
         """
         :param model: YOLO model
         :param image_path: Path of the image to infer.
         :return: Inferred bounding boxes.
         """
-        # model = YOLO(model_path)
         inference = model(image_path)[0]
         bboxes = inference.boxes.xyxy.tolist()
         bboxes = [[int(coord) for coord in bbox] for bbox in bboxes]
