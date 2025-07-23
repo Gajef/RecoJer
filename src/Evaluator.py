@@ -62,7 +62,7 @@ class Evaluator:
         print(f"    * Precision: {np.sum(tp_list)}/{np.sum(detect_count_list)} ({precision: .2f}% ) coinciden con glifos en un IoU > {iou_threshold}")
         print(f"    * Recall {np.sum(tp_list)}/{np.sum(gt_count_list)} ({recall: .2f}% ) detecciones coinciden con groundtruth ")
         print(f"    * Accuracy {np.sum(tp_list)/(np.sum(tp_list) + np.sum(fp_list) + np.sum(fn_list)): .3f}")
-        print(f"    * {np.sum(fp_list)}/{np.sum(detect_count_list)}  ({wrong: .2f}% ) NO coinciden con glifos en un IoU > {iou_threshold}")
+        print(f"    * Recall {np.sum(fp_list)}/{np.sum(detect_count_list)}  ({wrong: .2f}% ) NO coinciden con glifos en un IoU > {iou_threshold}")
         print(f"    * Media de IoUs: {np.mean(iou_mean_list): .2f}")
 
         print(f"\n * TP: {np.sum(tp_list)}, FP: {np.sum(fp_list)}, FN: {np.sum(fn_list)}")
@@ -114,11 +114,12 @@ class Evaluator:
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         cv2.imwrite(f"{self.paths.RESULTS}/contours/images/{os.path.basename(image_path)}", image)
 
+        iou_mean = np.mean(ious_list) if ious_list else 0
+
         if verbose:
             precision = true_positives * 100 / n_detected if n_detected > 0 else 0
             recall = true_positives * 100 / len(groundtruth_bboxes) if len(groundtruth_bboxes) > 0 else 0
             wrong = false_positives * 100 / n_detected if n_detected > 0 else 0
-            iou_mean = np.mean(ious_list) if len(ious_list) > 0 else 0
             print(f"En la imagen {os.path.basename(image_path)} hay {len(groundtruth_bboxes)} detecciones (groundtruth):")
             print(f"   * Hubo {false_negatives} glifos que no se detectaron.")
             print(f"   * El algoritmo hizo {n_detected} detecciones:")
@@ -129,7 +130,7 @@ class Evaluator:
                 f"      * {false_positives}/{n_detected} ({wrong: .2f}%) NO coinciden con glifos (IoU <= {iou_threshold})")
             print(f"   * Media de IoUs de las detecciones correctas: {iou_mean: .3f}\n")
 
-        return true_positives, false_positives, false_negatives, np.mean(ious_list)
+        return true_positives, false_positives, false_negatives, iou_mean
 
     def _read_class_bboxes_file(self, file_path):
         with open(file_path) as f:
