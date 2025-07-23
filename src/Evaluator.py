@@ -127,7 +127,7 @@ class Evaluator:
                 f"      * Recall: {true_positives}/{len(groundtruth_bboxes)} ({recall: .2f}%) del groundtruth")
             print(
                 f"      * {false_positives}/{n_detected} ({wrong: .2f}%) NO coinciden con glifos (IoU <= {iou_threshold})")
-            print(f"   * Media de IoUs de las detecciones correctas: {np.mean(ious_list): .3f}\n")
+            print(f"   * Media de IoUs de las detecciones correctas: {iou_mean: .3f}\n")
 
         return true_positives, false_positives, false_negatives, np.mean(ious_list)
 
