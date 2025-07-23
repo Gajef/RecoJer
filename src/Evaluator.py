@@ -52,17 +52,20 @@ class Evaluator:
                 gt_count_list.append(len(gt_bboxes))
                 detect_count_list.append(len(detect_bboxes))
 
+        # Metricas
+        precision = np.sum(tp_list)*100/np.sum(detect_count_list) if detect_count_list else 0
+        recall = np.sum(tp_list)*100/np.sum(gt_count_list) if gt_count_list else 0
+
         print(f"* Hay {np.sum(gt_count_list)} glifos en total (groundtruth). Media: {np.mean(gt_count_list)} por pagina")
         print(f"* Find contours ha detectado {np.sum(detect_count_list)} glifos.  Media: {np.mean(detect_count_list)} por pagina")
-        print(f"    * {np.sum(tp_list)}/{np.sum(detect_count_list)} ({np.sum(tp_list)*100/np.sum(detect_count_list): .2f}% ) coinciden con glifos en un IoU > {iou_threshold}")
-        print(f"        * {np.sum(tp_list)}/{np.sum(gt_count_list)} ({np.sum(tp_list)*100/np.sum(gt_count_list): .2f}% ) detecciones coinciden con groundtruth ")
+        print(f"    * Precision: {np.sum(tp_list)}/{np.sum(detect_count_list)} ({precision: .2f}% ) coinciden con glifos en un IoU > {iou_threshold}")
+        print(f"    * Recall {np.sum(tp_list)}/{np.sum(gt_count_list)} ({recall: .2f}% ) detecciones coinciden con groundtruth ")
+        print(f"    * Accuracy {np.sum(tp_list)/(np.sum(tp_list) + np.sum(fp_list) + np.sum(fn_list)): .3f}")
         print(f"    * {np.sum(fp_list)}/{np.sum(detect_count_list)}  ({np.sum(fp_list)*100/np.sum(detect_count_list): .2f}% ) NO coinciden con glifos en un IoU > {iou_threshold}")
         print(f"    * Media de IoUs: {np.mean(iou_mean_list): .2f}")
 
         print(f"\n * TP: {np.sum(tp_list)}, FP: {np.sum(fp_list)}, FN: {np.sum(fn_list)}")
-        print(f"\n* Accuracy: {np.sum(tp_list)/(np.sum(tp_list) + np.sum(fp_list) + np.sum(fn_list)): .3f}")
-        print(f"* Recall: {np.sum(tp_list)/(np.sum(tp_list) + np.sum(fn_list)): .3f}")
-        print(f"* Precision: {np.sum(tp_list)/(np.sum(tp_list) + np.sum(fp_list)): .3f}")
+
 
 
 
@@ -111,11 +114,14 @@ class Evaluator:
         cv2.imwrite(f"{self.paths.RESULTS}/contours/images/{os.path.basename(image_path)}", image)
 
         if verbose:
+            precision = true_positives * 100 / n_detected if n_detected > 0 else 0
+            recall = true_positives * 100 / len(groundtruth_bboxes) if len(groundtruth_bboxes) > 0 else 0
             print(f"En la imagen {os.path.basename(image_path)} hay {len(groundtruth_bboxes)} detecciones (groundtruth):")
             print(f"   * Hubo {false_negatives} glifos que no se detectaron.")
             print(f"   * El algoritmo hizo {n_detected} detecciones:")
             print(
-                f"      * {true_positives}/{n_detected} ({true_positives * 100 / n_detected: .2f}%) coinciden con glifos (IoU > {iou_threshold}) -> {true_positives}/{len(groundtruth_bboxes)} ({true_positives * 100 / len(groundtruth_bboxes): .2f}%) del groundtruth")
+                f"      * Precision: {true_positives}/{n_detected} ({precision: .2f}%) coinciden con glifos (IoU > {iou_threshold})"
+                f"      * Recall: {true_positives}/{len(groundtruth_bboxes)} ({recall: .2f}%) del groundtruth")
             print(
                 f"      * {false_positives}/{n_detected} ({false_positives * 100 / n_detected: .2f}%) NO coinciden con glifos (IoU <= {iou_threshold})")
             print(f"   * Media de IoUs de las detecciones correctas: {np.mean(ious_list): .3f}\n")
