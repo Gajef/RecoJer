@@ -53,9 +53,9 @@ class Evaluator:
                 detect_count_list.append(len(detect_bboxes))
 
         # Metricas
-        precision = np.sum(tp_list)*100/np.sum(detect_count_list) if detect_count_list else 0
-        recall = np.sum(tp_list)*100/np.sum(gt_count_list) if gt_count_list else 0
-        wrong = np.sum(fp_list)*100/np.sum(detect_count_list)
+        precision = np.sum(tp_list)*100/np.sum(detect_count_list) if np.sum(detect_count_list) else 0
+        recall = np.sum(tp_list)*100/np.sum(gt_count_list) if np.sum(gt_count_list) else 0
+        wrong = np.sum(fp_list)*100/np.sum(detect_count_list) if np.sum(detect_count_list) else 0
 
         print(f"* Hay {np.sum(gt_count_list)} glifos en total (groundtruth). Media: {np.mean(gt_count_list)} por pagina")
         print(f"* Find contours ha detectado {np.sum(detect_count_list)} glifos.  Media: {np.mean(detect_count_list)} por pagina")
@@ -117,7 +117,7 @@ class Evaluator:
         if verbose:
             precision = true_positives * 100 / n_detected if n_detected > 0 else 0
             recall = true_positives * 100 / len(groundtruth_bboxes) if len(groundtruth_bboxes) > 0 else 0
-            wrong = false_positives * 100 / n_detected
+            wrong = false_positives * 100 / n_detected if n_detected > 0 else 0
             print(f"En la imagen {os.path.basename(image_path)} hay {len(groundtruth_bboxes)} detecciones (groundtruth):")
             print(f"   * Hubo {false_negatives} glifos que no se detectaron.")
             print(f"   * El algoritmo hizo {n_detected} detecciones:")
