@@ -118,6 +118,7 @@ class Evaluator:
             precision = true_positives * 100 / n_detected if n_detected > 0 else 0
             recall = true_positives * 100 / len(groundtruth_bboxes) if len(groundtruth_bboxes) > 0 else 0
             wrong = false_positives * 100 / n_detected if n_detected > 0 else 0
+            iou_mean = np.mean(ious_list) if len(ious_list) > 0 else 0
             print(f"En la imagen {os.path.basename(image_path)} hay {len(groundtruth_bboxes)} detecciones (groundtruth):")
             print(f"   * Hubo {false_negatives} glifos que no se detectaron.")
             print(f"   * El algoritmo hizo {n_detected} detecciones:")
