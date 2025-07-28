@@ -174,6 +174,7 @@ class GlyphAsciiGenerator:
                 choice = np.random.choice(["dots", "dots1", "dots2", "dots3"])
             next_image_path = f"{self.paths.EXTRA_ASCII_IMAGES}/{choice}.png"
             next_image = self.resize_to_width(Image.open(next_image_path))
+            annotations = self.generate_annotations(plotting_index, column_width, img_shape, next_image.size, next_image_path, next_image, (0, 0), 1)
         elif choice == "h_text":
             next_image = self._generate_random_text_location_img("horizontal")
         elif choice == "v_text":
@@ -190,6 +191,7 @@ class GlyphAsciiGenerator:
         next_image_path = glyphs_paths_list.pop(0)
         next_image = Image.open(next_image_path).convert("L")
         next_image = self.augmenter.random_transformation_from_code(np.array(next_image), transformation_code)
+        custom_class = 0
 
         do_stack = np.random.choice([False, True])
 
@@ -218,8 +220,8 @@ class GlyphAsciiGenerator:
                 composition.paste(extra_glyph, (glyph_separation + next_image.size[0], int(composition_height/2 - extra_glyph.size[1]/2)))
 
                 # Anotaciones
-                annotations += self.generate_annotations(plotting_index, column_width, img_shape, composition.size, next_image_path, next_image, (0, 0))
-                annotations += self.generate_annotations(plotting_index, column_width, img_shape, composition.size, extra_glyph_path, extra_glyph, (next_image.size[0] + glyph_separation, 0))
+                annotations += self.generate_annotations(plotting_index, column_width, img_shape, composition.size, next_image_path, next_image, (0, 0), custom_class)
+                annotations += self.generate_annotations(plotting_index, column_width, img_shape, composition.size, extra_glyph_path, extra_glyph, (next_image.size[0] + glyph_separation, 0), custom_class)
 
 
             elif (glyph_type == "Wide" and not was_rotated) or (glyph_type == "Tall" and was_rotated):
@@ -230,16 +232,16 @@ class GlyphAsciiGenerator:
                 composition_width, composition_height = composition.size
                 composition.paste(next_image, (composition_width//2 - next_image.size[0]//2, 0))
                 composition.paste(extra_glyph, (0, next_image.size[1] + glyph_separation))
-                annotations += self.generate_annotations(plotting_index, column_width, img_shape, next_image.size, next_image_path, next_image, (0, 0))
-                annotations += self.generate_annotations(plotting_index, column_width, img_shape, (composition.size[0], extra_glyph.size[1]), extra_glyph_path, extra_glyph, (0, next_image.size[1] + glyph_separation))
+                annotations += self.generate_annotations(plotting_index, column_width, img_shape, next_image.size, next_image_path, next_image, (0, 0), custom_class)
+                annotations += self.generate_annotations(plotting_index, column_width, img_shape, (composition.size[0], extra_glyph.size[1]), extra_glyph_path, extra_glyph, (0, next_image.size[1] + glyph_separation), custom_class)
             else:
                 # Se deja como está previsiblemente (o se aplica mixup)
                 composition = self.resize_to_width(next_image)
-                annotations += self.generate_annotations(plotting_index, column_width, img_shape, composition.size, next_image_path, composition, (0, 0))
+                annotations += self.generate_annotations(plotting_index, column_width, img_shape, composition.size, next_image_path, composition, (0, 0), custom_class)
 
         else:
             composition = self.resize_to_width(next_image)
-            annotations += self.generate_annotations(plotting_index, column_width, img_shape, composition.size, next_image_path, composition, (0, 0))
+            annotations += self.generate_annotations(plotting_index, column_width, img_shape, composition.size, next_image_path, composition, (0, 0), custom_class)
 
         return composition, annotations
 
@@ -252,19 +254,18 @@ class GlyphAsciiGenerator:
 
         return image
 
-    def generate_annotations(self, plotting_index, column_width, img_shape, composition_size, pasted_image_path, pasted_image, paste_position):
+    def generate_annotations(self, plotting_index, column_width, img_shape, composition_size, pasted_image_path, pasted_image, paste_position, custom_class = None):
         (img_height, img_width) = img_shape
         (pasted_image_width, pasted_image_height) = pasted_image.size
         (paste_x, paste_y) = paste_position
         (composition_width, composition_height) = composition_size
         glyph_gardiner_id = pasted_image_path.split("/")[-1].split("_")[0]
-        glyph_class = self.files_generator.glyph_class_dictionary.get(glyph_gardiner_id)
+        glyph_class = custom_class if custom_class is not None else self.files_generator.glyph_class_dictionary.get(glyph_gardiner_id)
         normalized_x = (plotting_index[0] + ((column_width - composition_width) // 2) + (pasted_image_width / 2) + paste_x) / img_width
         normalized_y = (plotting_index[1] + (composition_height / 2) + paste_y) / img_height
         normalized_width = pasted_image_width / img_width
         normalized_height = pasted_image_height / img_height
-        # annotation = [f"{glyph_class} {normalized_x:.6f} {normalized_y:.6f} {normalized_width:.6f} {normalized_height:.6f}"]
-        annotation = [f"0 {normalized_x:.6f} {normalized_y:.6f} {normalized_width:.6f} {normalized_height:.6f}"]
+        annotation = [f"{glyph_class} {normalized_x:.6f} {normalized_y:.6f} {normalized_width:.6f} {normalized_height:.6f}"]
 
         return annotation
 
