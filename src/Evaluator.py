@@ -59,16 +59,12 @@ class Evaluator:
 
         print(f"* Hay {np.sum(gt_count_list)} glifos en total (groundtruth). Media de {np.mean(gt_count_list): .2f} por pagina")
         print(f"* El algoritmo ha detectado {np.sum(detect_count_list)} glifos.  Media de {np.mean(detect_count_list): .2f} por pagina")
-        print(f"    * Accuracy   {accuracy: .2f} -> {np.sum(tp_list)}/{np.sum(tp_list) + np.sum(fp_list) + np.sum(fn_list)} glifos verdaderos positivos")
+        print(f"    * Accuracy:  {accuracy: .2f} -> {np.sum(tp_list)}/{np.sum(tp_list) + np.sum(fp_list) + np.sum(fn_list)} glifos verdaderos positivos")
         print(f"    * Precision: {precision: .2f} -> {np.sum(tp_list)}/{np.sum(detect_count_list)} glifos bien detectados de todos los predichos")
-        print(f"    * Recall     {recall: .2f} -> {np.sum(tp_list)}/{np.sum(gt_count_list)} glifos de todas las instancias reales ")
-        print(f"* * Media de IoUs de las detecciones correctas (TP): {np.mean(iou_mean_list): .2f}")
+        print(f"    * Recall:    {recall: .2f} -> {np.sum(tp_list)}/{np.sum(gt_count_list)} glifos de todas las instancias reales ")
+        print(f"* Media de IoUs de las detecciones correctas (TP): {np.mean(iou_mean_list): .2f}")
 
         print(f"\n * TP: {np.sum(tp_list)}, FP: {np.sum(fp_list)}, FN: {np.sum(fn_list)}")
-
-
-
-
 
     def evaluate_bboxes(self, groundtruth_bboxes, detected_bboxes, image_path, iou_threshold, verbose = False):
         """
