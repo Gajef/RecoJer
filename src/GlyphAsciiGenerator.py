@@ -174,7 +174,8 @@ class GlyphAsciiGenerator:
                 choice = np.random.choice(["dots", "dots1", "dots2", "dots3"])
             next_image_path = f"{self.paths.EXTRA_ASCII_IMAGES}/{choice}.png"
             next_image = self.resize_to_width(Image.open(next_image_path))
-            annotations = self.generate_annotations(plotting_index, column_width, img_shape, next_image.size, next_image_path, next_image, (0, 0), 1)
+            if choice != "blank":
+                annotations = self.generate_annotations(plotting_index, column_width, img_shape, next_image.size, next_image_path, next_image, (0, 0), 1)
         elif choice == "h_text":
             next_image = self._generate_random_text_location_img("horizontal")
         elif choice == "v_text":
