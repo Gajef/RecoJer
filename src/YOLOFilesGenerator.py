@@ -1,6 +1,7 @@
 import gardiner2unicode
 import numpy as np
 from GlyphdatasetAnalyzer import GlyphdatasetAnalyzer
+from PTBookImporter import paths
 from PathsProvider import PathsProvider
 from gardiner2unicode import GardinerToUnicodeMap, UnicodeGlyphGenerator
 
@@ -53,8 +54,8 @@ class YOLOFilesGenerator:
 
             data_yaml.writelines(lines)
 
-    def generate_txt(self, annotations, path, filename):
-        with open(self.paths.ASCII_AUGMENTATION + "/labels" + path + "/" + filename, "w") as text_file:
+    def generate_txt(self, annotations, path, filename, dst = paths.ASCII_AUGMENTATION):
+        with open(dst + "/labels" + path + "/" + filename, "w") as text_file:
             for annotation in annotations:
                 text_file.write(f"{annotation}\n")
 
