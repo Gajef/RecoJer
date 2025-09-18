@@ -10,6 +10,8 @@ class PathsProvider:
         self.AUTOMATED_LOCATIONS = self.AUTOMATED + "/Locations"
         self.MANUAL_LOCATIONS = self.MANUAL + "/Locations"
         self.AUGMENTED_DATASET = "../data/GlyphDataset/AugmentedDataset"
+        self.TRAIN_DATASET = "../data/TrainDataset"
+        self.HIERO_DATASET = "../data/GlyphHiero2025"
         self.AUGMENTATION_MASKS_BIG = "../data/GlyphDataset/AugmentationMasks/Big"
         self.AUGMENTATION_MASKS_SMALL = "../data/GlyphDataset/AugmentationMasks/Small"
         self.FONTS = "../data/AsciiDataset/Fonts"
