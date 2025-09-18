@@ -64,21 +64,21 @@ class GlyphAsciiGenerator:
         os.replace(path, dst_path)
         glyph.close()
 
-    def generate_train_val_pt_pictures(self, path, n_train, n_val, replace=True):
+    def generate_train_val_pt_pictures(self, source, n_train, n_val, replace=True, dst = paths.ASCII_AUGMENTATION):
         # path = self.path.ASCII_GLYPHS
         if replace:
-            self.remove_previous_pictures_and_labels(self.paths.ASCII_AUGMENTATION)
-        self.generate_pt_pictures(path, n_train, "/train")
-        self.generate_pt_pictures(path, n_val, "/val")
+            self.remove_previous_pictures_and_labels(dst)
+        self.generate_pt_pictures(source, n_train, "/train", dst = dst)
+        self.generate_pt_pictures(source, n_val, "/val", dst = dst)
 
-    def generate_pt_pictures(self, path, n, dst):
+    def generate_pt_pictures(self, source, n, path, dst):
         rng = np.random.default_rng()
         stone_img_paths = self.paths.get_files_path_by_extension_in_order_recursive(self.paths.HIERO_DATASET, "png")
         stone_img_paths += self.paths.get_files_path_by_extension_in_order_recursive(self.paths.HIERO_DATASET, "jpg")
         for i in range(n):
-            img_paths = self.paths.get_files_path_by_extension_in_order_recursive(path, "png")
+            img_paths = self.paths.get_files_path_by_extension_in_order_recursive(source, "png")
             rng.shuffle(img_paths)
-            self.generate_picture_pyramid_text(img_paths, stone_img_paths, dst)
+            self.generate_picture_pyramid_text(img_paths, stone_img_paths, path, dst)
 
     def remove_previous_pictures_and_labels(self, dataset_path):
         img_train_paths = self.paths.get_files_path_by_extension_in_order(dataset_path + "/images/train", "png")
@@ -122,14 +122,14 @@ class GlyphAsciiGenerator:
             if complete_picture:
                 white_canvas.save(f"{dst}/images{path}/pt_{picture_id}.png")
                 white_canvas.close()
-                self.files_generator.generate_txt(annotations, path, f"pt_{picture_id}.txt")
+                self.files_generator.generate_txt(annotations, path, f"pt_{picture_id}.txt", dst = dst)
                 complete_picture, plotting_column_positions, plotting_index, white_canvas, annotations, picture_id = self.initialize_picture(
                     column_width, img_height, img_width, margin, real_width)
 
         picture_id = self._generate_image_id()
         white_canvas.save(f"{dst}/images{path}/pt_{picture_id}.png")
         white_canvas.close()
-        self.files_generator.generate_txt(annotations, path, f"pt_{picture_id}.txt")
+        self.files_generator.generate_txt(annotations, path, f"pt_{picture_id}.txt", dst = dst)
 
     def paste_next_glyphs(self, glyphs_paths_list, stone_paths_list, white_canvas, plotting_index, column_width, img_shape):
         next_image, is_glyph, image_annotations = self.choose_next_image(glyphs_paths_list, stone_paths_list, plotting_index, column_width, img_shape)
