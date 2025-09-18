@@ -7,6 +7,7 @@ import numpy as np
 from PIL import Image, ImageDraw
 from PIL import ImageFont
 
+from PTBookImporter import paths
 from PathsProvider import PathsProvider
 from gardiner2unicode import GardinerToUnicodeMap, UnicodeGlyphGenerator
 from DatasetAugmenter import DatasetAugmenter
@@ -72,10 +73,12 @@ class GlyphAsciiGenerator:
 
     def generate_pt_pictures(self, path, n, dst):
         rng = np.random.default_rng()
+        stone_img_paths = self.paths.get_files_path_by_extension_in_order_recursive(self.paths.HIERO_DATASET, "png")
+        stone_img_paths += self.paths.get_files_path_by_extension_in_order_recursive(self.paths.HIERO_DATASET, "jpg")
         for i in range(n):
             img_paths = self.paths.get_files_path_by_extension_in_order_recursive(path, "png")
             rng.shuffle(img_paths)
-            self.generate_picture_pyramid_text(img_paths, dst)
+            self.generate_picture_pyramid_text(img_paths, stone_img_paths, dst)
 
     def remove_previous_pictures_and_labels(self, dataset_path):
         img_train_paths = self.paths.get_files_path_by_extension_in_order(dataset_path + "/images/train", "png")
@@ -86,7 +89,7 @@ class GlyphAsciiGenerator:
         for path in img_train_paths + img_val_paths + txt_train_paths + txt_val_paths:
             os.remove(path)
 
-    def generate_picture_pyramid_text(self, glyphs_paths_list, path):
+    def generate_picture_pyramid_text(self, glyphs_paths_list, stone_paths_list, path, dst = paths.ASCII_AUGMENTATION):
         img_shape = (2800, 1700)
         img_height, img_width = img_shape
         margin = 150
@@ -100,6 +103,7 @@ class GlyphAsciiGenerator:
 
         while len(glyphs_paths_list) > 0:
             glyphs_annotations, next_image_height = self.paste_next_glyphs(glyphs_paths_list,
+                                                                           stone_paths_list,
                                                                            white_canvas,
                                                                            plotting_index,
                                                                            column_width,
@@ -116,19 +120,19 @@ class GlyphAsciiGenerator:
                 complete_picture = True
 
             if complete_picture:
-                white_canvas.save(f"{self.paths.ASCII_AUGMENTATION}/images{path}/pt_{picture_id}.png")
+                white_canvas.save(f"{dst}/images{path}/pt_{picture_id}.png")
                 white_canvas.close()
                 self.files_generator.generate_txt(annotations, path, f"pt_{picture_id}.txt")
                 complete_picture, plotting_column_positions, plotting_index, white_canvas, annotations, picture_id = self.initialize_picture(
                     column_width, img_height, img_width, margin, real_width)
 
         picture_id = self._generate_image_id()
-        white_canvas.save(f"{self.paths.ASCII_AUGMENTATION}/images{path}/pt_{picture_id}.png")
+        white_canvas.save(f"{dst}/images{path}/pt_{picture_id}.png")
         white_canvas.close()
         self.files_generator.generate_txt(annotations, path, f"pt_{picture_id}.txt")
 
-    def paste_next_glyphs(self, glyphs_paths_list, white_canvas, plotting_index, column_width, img_shape):
-        next_image, is_glyph, image_annotations = self.choose_next_image(glyphs_paths_list, plotting_index, column_width, img_shape)
+    def paste_next_glyphs(self, glyphs_paths_list, stone_paths_list, white_canvas, plotting_index, column_width, img_shape):
+        next_image, is_glyph, image_annotations = self.choose_next_image(glyphs_paths_list, stone_paths_list, plotting_index, column_width, img_shape)
 
         (next_image_width, next_image_height) = next_image.size
         white_canvas.paste(next_image, (plotting_index[0] + (column_width - next_image_width) // 2, plotting_index[1]))
@@ -139,6 +143,9 @@ class GlyphAsciiGenerator:
     def initialize_picture(self, column_width, img_height, img_width, margin, real_width):
         withe_canvas = np.full((img_height, img_width), 255, dtype=np.uint8)
         white_canvas = Image.fromarray(withe_canvas)
+        white_canvas_rgb = np.stack([white_canvas, white_canvas, white_canvas], axis=2)
+        white_canvas_rgb = Image.fromarray(white_canvas_rgb)
+
 
         n_columns = np.random.randint(1, 13)
         blocks = self.distribute_columns_to_blocks(n_columns)
@@ -159,13 +166,13 @@ class GlyphAsciiGenerator:
 
         return complete_picture, plotting_column_positions, plotting_index, white_canvas, annotations, picture_id
 
-    def choose_next_image(self, glyphs_paths_list, plotting_index, column_width, img_shape):
+    def choose_next_image(self, glyphs_paths_list, stone_paths_list, plotting_index, column_width, img_shape):
         is_glyph = False
-        options = ["glyph", "blank", "line", "h_text", "v_text", "erased", "dots"]
-        choice = np.random.choice(options, p=[0.6, 0.225, 0.05, 0.025, 0.0, 0.05, 0.05])
+        options = ["glyph", "blank", "line", "h_text", "v_text", "erased", "dots", "stone"]
+        choice = np.random.choice(options, p=[0.45, 0.225, 0.05, 0.025, 0.0, 0.05, 0.05, 0.15])
         annotations = ""
-        if choice == "glyph":
-            next_image, annotations = self.choose_next_glyphs(glyphs_paths_list, plotting_index, column_width, img_shape)
+        if choice == "glyph" or choice == "stone":
+            next_image, annotations = self.choose_next_glyphs(glyphs_paths_list, stone_paths_list, plotting_index, column_width, img_shape, is_stone = (choice == "stone"))
             is_glyph = True
         elif choice == "blank" or choice == "line" or choice == "erased" or choice == "dots":
             if choice == "erased":
@@ -186,15 +193,19 @@ class GlyphAsciiGenerator:
 
         return next_image, is_glyph, annotations
 
-    def choose_next_glyphs(self, glyphs_paths_list, plotting_index, column_width, img_shape):
+    def choose_next_glyphs(self, glyphs_paths_list, stone_paths_list, plotting_index, column_width, img_shape, is_stone = False):
         annotations = []
-        transformation_code = np.random.randint(0, 1023)
-        next_image_path = glyphs_paths_list.pop(0)
-        next_image = Image.open(next_image_path).convert("L")
-        next_image = self.augmenter.random_transformation_from_code(np.array(next_image), transformation_code)
+        if not is_stone:
+            transformation_code = np.random.randint(0, 1023)
+            next_image_path = glyphs_paths_list.pop(0)
+            next_image = Image.open(next_image_path).convert("L")
+            next_image = self.augmenter.random_transformation_from_code(np.array(next_image), transformation_code)
+        else:
+            next_image_path = np.random.choice(stone_paths_list)
+            next_image = Image.open(next_image_path)
         custom_class = 0
 
-        do_stack = np.random.choice([False, True])
+        do_stack = False if is_stone else np.random.choice([False, True])
 
         if do_stack:
             glyph_type = next_image_path.split("/")[-2]
@@ -236,7 +247,7 @@ class GlyphAsciiGenerator:
                 annotations += self.generate_annotations(plotting_index, column_width, img_shape, next_image.size, next_image_path, next_image, (0, 0), custom_class)
                 annotations += self.generate_annotations(plotting_index, column_width, img_shape, (composition.size[0], extra_glyph.size[1]), extra_glyph_path, extra_glyph, (0, next_image.size[1] + glyph_separation), custom_class)
             else:
-                # Se deja como está previsiblemente (o se aplica mixup)
+                # Se deja como está previsiblemente (TODO: o se aplica mixup)
                 composition = self.resize_to_width(next_image)
                 annotations += self.generate_annotations(plotting_index, column_width, img_shape, composition.size, next_image_path, composition, (0, 0), custom_class)
 
