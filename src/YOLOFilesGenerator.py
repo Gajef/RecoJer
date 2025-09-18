@@ -39,15 +39,17 @@ class YOLOFilesGenerator:
         
     def generate_yaml(self, path):
         with open("data.yaml", "w") as data_yaml:
-            lines = [f"path: {path}\n"
-                  f"train: images/train\n",
-                  f"val: images/val\n",
-                  "\n",
-                  f"names:\n"
-                  ]
+            lines = [
+                f"path: {path}\n"
+                f"train: images/train\n",
+                f"val: images/val\n",
+                "\n",
+                f"names:\n",
+                f"    0: no_glyph"
+            ]
 
             for key, value in self.glyph_class_dictionary.items():
-                lines.append(f"    {value}: {key}\n")
+                lines.append(f"    {value + 1}: {key}\n")
 
             data_yaml.writelines(lines)
 
