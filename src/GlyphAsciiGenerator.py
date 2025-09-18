@@ -182,7 +182,7 @@ class GlyphAsciiGenerator:
             next_image_path = f"{self.paths.EXTRA_ASCII_IMAGES}/{choice}.png"
             next_image = self.resize_to_width(Image.open(next_image_path))
             if choice != "blank":
-                annotations = self.generate_annotations(plotting_index, column_width, img_shape, next_image.size, next_image_path, next_image, (0, 0), 1)
+                annotations = self.generate_annotations(plotting_index, column_width, img_shape, next_image.size, next_image_path, next_image, (0, 0), 0)
         elif choice == "h_text":
             next_image = self._generate_random_text_location_img("horizontal")
         elif choice == "v_text":
