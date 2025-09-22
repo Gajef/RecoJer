@@ -121,7 +121,7 @@ class DatasetAugmenter:
             name = picture.name
             location_file = name.split(".")[0].split("_")[0]
             cv2.imwrite(f"{dst}/images/{path}/{name}.jpg", image)
-            self.files_generator.translate_txt(f"{source}/{location_file}.txt", f"{dst}/labels/{path}/{name}.txt")
+            self.files_generator.translate_txt(f"{source}/{location_file}.txt", f"{dst}/labels/{path}/{name}.txt", image.shape[1], image.shape[0], just_in_gardiner = False)
 
     # Generate folders for train and test
     def generate_folders(self, folder_name):
