@@ -6,7 +6,7 @@ from PathsProvider import PathsProvider
 from gardiner2unicode import GardinerToUnicodeMap, UnicodeGlyphGenerator
 
 class YOLOFilesGenerator:
-    def __init__(self, source, n_occurrences=50):
+    def __init__(self, source, n_occurrences=1):
         self.source = source
         self.analyzer = GlyphdatasetAnalyzer()
         self.paths = PathsProvider()
@@ -15,7 +15,7 @@ class YOLOFilesGenerator:
         self.glyph_class_dictionary = self.__create_dictionary()
 
     # Translates txt from original form to YOLO form
-    def translate_txt(self, original_file_path, new_file_path, is_binary = True):
+    def translate_txt(self, original_file_path, new_file_path, img_width, img_height, is_binary = True, just_in_gardiner = True):
         with open(original_file_path, 'r') as original_file, open(new_file_path, 'w') as new_file:
             for line in original_file:
                 line.strip()
@@ -24,13 +24,13 @@ class YOLOFilesGenerator:
                 else:
                     image_name, x_top, y_top, x_bottom, y_bottom, _ = line.split(",")
                 gardiner_id = image_name.split(".")[0].split("_")[1]
-                if gardiner_id in self.gardiner_ids:
+                if not just_in_gardiner or (just_in_gardiner and gardiner_id in self.gardiner_ids):
                     class_by_id = 0 if is_binary else self.glyph_class_dictionary[gardiner_id]
 
-                    x_center = ((int(x_top) + int(x_bottom)) / 2) / 1150
-                    y_center = ((int(y_top) + int(y_bottom)) / 2) / 1600
-                    width = (int(x_bottom) - int(x_top)) / 1150
-                    height = (int(y_bottom) - int(y_top)) / 1600
+                    x_center = ((int(x_top) + int(x_bottom)) / 2) / img_width
+                    y_center = ((int(y_top) + int(y_bottom)) / 2) / img_height
+                    width = (int(x_bottom) - int(x_top)) / img_width
+                    height = (int(y_bottom) - int(y_top)) / img_height
 
 
                     new_file.write(f"{class_by_id} {x_center:.6f} {y_center:.6f} {width:.6f} {height:.6f}\n")
