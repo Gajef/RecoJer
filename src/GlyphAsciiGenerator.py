@@ -64,12 +64,14 @@ class GlyphAsciiGenerator:
         os.replace(path, dst_path)
         glyph.close()
 
-    def generate_train_val_pt_pictures(self, source, n_train, n_val, replace=True, dst = paths.ASCII_AUGMENTATION):
+    def generate_train_val_pt_pictures(self, source, n_train, n_val, n_test, replace=True, dst = paths.ASCII_AUGMENTATION):
         # path = self.path.ASCII_GLYPHS
         if replace:
             self.remove_previous_pictures_and_labels(dst)
         self.generate_pt_pictures(source, n_train, "/train", dst = dst)
         self.generate_pt_pictures(source, n_val, "/val", dst = dst)
+        self.generate_pt_pictures(source, n_test, "/test", dst = dst)
+
 
     def generate_pt_pictures(self, source, n, path, dst):
         rng = np.random.default_rng()
@@ -83,8 +85,11 @@ class GlyphAsciiGenerator:
     def remove_previous_pictures_and_labels(self, dataset_path):
         img_train_paths = self.paths.get_files_path_by_extension_in_order(dataset_path + "/images/train", "png")
         img_val_paths = self.paths.get_files_path_by_extension_in_order(dataset_path + "/images/val", "png")
+        img_test_paths = self.paths.get_files_path_by_extension_in_order(dataset_path + "/images/test", "png")
         txt_train_paths = self.paths.get_files_path_by_extension_in_order(dataset_path + "/labels/train", "txt")
         txt_val_paths = self.paths.get_files_path_by_extension_in_order(dataset_path + "/labels/val", "txt")
+        txt_test_paths = self.paths.get_files_path_by_extension_in_order(dataset_path + "/labels/test", "txt")
+
 
         for path in img_train_paths + img_val_paths + txt_train_paths + txt_val_paths:
             os.remove(path)
