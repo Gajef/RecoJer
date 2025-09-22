@@ -203,7 +203,7 @@ class GlyphAsciiGenerator:
         else:
             next_image_path = np.random.choice(stone_paths_list)
             next_image = Image.open(next_image_path)
-        custom_class = 1
+        custom_class = 0
 
         do_stack = False if is_stone else np.random.choice([False, True])
 
