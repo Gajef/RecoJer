@@ -38,7 +38,12 @@ class DatasetAugmenter:
         :param n: Number of copies to generate.
         :param dst: Folder in which perform copies.
         """
-        upsample_folders = [f"{dst}/images/train", f"{dst}/images/val", f"{dst}/labels/train", f"{dst}/labels/val"]
+        upsample_folders = [f"{dst}/images/train",
+                            f"{dst}/images/val",
+                            f"{dst}/images/test",
+                            f"{dst}/labels/train",
+                            f"{dst}/labels/val",
+                            f"{dst}/labels/test"]
         for folder in upsample_folders:
             for file in os.listdir(folder):
                 if file.endswith(".jpg") or file.endswith(".png") or file.endswith(".txt"):
