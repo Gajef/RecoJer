@@ -21,7 +21,12 @@ class DatasetAugmenter:
         self.files_generator = YOLOFilesGenerator("glyphdataset")
 
     def clear_folders(self, dst):
-        upsample_folders = [f"{dst}/images/train", f"{dst}/images/val", f"{dst}/labels/train", f"{dst}/labels/val"]
+        upsample_folders = [f"{dst}/images/train",
+                            f"{dst}/images/val",
+                            f"{dst}/images/test",
+                            f"{dst}/labels/train",
+                            f"{dst}/labels/val",
+                            f"{dst}/labels/test"]
 
         for folder in upsample_folders:
             shutil.rmtree(folder)
@@ -50,15 +55,17 @@ class DatasetAugmenter:
 
     # Returns n images by doing all the preprocessing
     def augmentation(self, picture_name, dst = paths.AUGMENTED_DATASET, verbose=False):
+        pictures = []
         image = cv2.cvtColor(cv2.imread(f"{self.paths.PICTURES}/{picture_name}"), cv2.COLOR_RGB2GRAY)
         picture = Picture(image, picture_name.split(".")[0])
+        pictures.append(picture)
 
         # 2 extra brightness pictures
         higher_brightness = self.preprocessor.brightness(image, 1.5)
         hb_picture = Picture(higher_brightness, f"{picture_name.split('.')[0]}_hb")
         lower_brightness = self.preprocessor.brightness(image, 0.5)
         lb_picture = Picture(lower_brightness, f"{picture_name.split('.')[0]}_lb")
-        self.train_test_split_and_save_pictures([picture, hb_picture, lb_picture], dst = dst)
+        pictures += [hb_picture, lb_picture]
 
         # 3 binarized imgs
         auto_binarized_img = self.preprocessor.binarize(image)
@@ -67,19 +74,21 @@ class DatasetAugmenter:
         lbin_picture = Picture(low_binarized_img, f"{picture_name.split('.')[0]}_low")
         high_binarized_img = self.preprocessor.binarize(image, th=180)
         hbin_picture = Picture(high_binarized_img, f"{picture_name.split('.')[0]}_hin")
-        self.train_test_split_and_save_pictures([bin_picture, lbin_picture, hbin_picture], dst = dst)
+        pictures += [bin_picture, lbin_picture, hbin_picture]
 
         # 1 borders_imgs
         auto_borders = self.preprocessor.ext_border(auto_binarized_img)
         ab_picture = Picture(auto_borders, f"{picture_name.split('.')[0]}_ab")
-        self.train_test_split_and_save_pictures([ab_picture], dst = dst)
+        pictures.append(ab_picture)
 
         # 2 shadow_imgs
         left_shadow_img = self.preprocessor.shadow(image, "left")
         lf_picture = Picture(left_shadow_img, f"{picture_name.split('.')[0]}_left")
         right_shadow_img = self.preprocessor.shadow(image, "right")
         rg_picture = Picture(right_shadow_img, f"{picture_name.split('.')[0]}_rg")
-        self.train_test_split_and_save_pictures([lf_picture, rg_picture], dst = dst)
+        pictures += [lf_picture, rg_picture]
+
+        self.train_test_split_and_save_pictures(pictures, dst = dst)
 
         if verbose:
             pass
@@ -93,28 +102,21 @@ class DatasetAugmenter:
 
         length = len(pictures)
 
-        if length > 1:
-            train = pictures[: int(length * 0.67)]
-            test = pictures[int(length * 0.67):]
-        else:
-            slicer = random.randint(0, 1)
-            train = pictures[:slicer]
-            test = pictures[slicer:]
+        train = pictures[:int(length * 0.67)]
+        val = pictures[int(length * 0.67):  int(length * 0.90)]
+        test = pictures[int(length * 0.90):]
 
+        self.save_images(train, "train",source, dst = dst)
+        self.save_images(val, "val", source,  dst = dst)
+        self.save_images(test, "test", source, dst = dst)
 
-        for train_picture in train:
-            train_image = train_picture.image
-            train_name = train_picture.name
-            location_file = train_name.split(".")[0].split("_")[0]
-            cv2.imwrite(f"{dst}/images/train/{train_name}.jpg", train_image)
-            self.files_generator.translate_txt(f"{source}/{location_file}.txt", f"{dst}/labels/train/{train_name}.txt")
-
-        for test_img in test:
-            test_image = test_img.image
-            test_name = test_img.name
-            location_file = test_name.split(".")[0].split("_")[0]
-            cv2.imwrite(f"{dst}/images/val/{test_name}.jpg", test_image)
-            self.files_generator.translate_txt(f"{source}/{location_file}.txt", f"{dst}/labels/val/{test_name}.txt")
+    def save_images(self, pictures, path,source = paths.MANUAL_LOCATIONS, dst = paths.AUGMENTED_DATASET):
+        for picture in pictures:
+            image = picture.image
+            name = picture.name
+            location_file = name.split(".")[0].split("_")[0]
+            cv2.imwrite(f"{dst}/images/{path}/{name}.jpg", image)
+            self.files_generator.translate_txt(f"{source}/{location_file}.txt", f"{dst}/labels/{path}/{name}.txt")
 
     # Generate folders for train and test
     def generate_folders(self, folder_name):
