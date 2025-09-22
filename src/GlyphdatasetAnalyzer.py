@@ -54,7 +54,7 @@ class GlyphdatasetAnalyzer:
 
     def find_hieroglyphics_with_at_least_n_occurrences(self, dataframe, n, verbose = False):
         query = dataframe['gardiner'].value_counts()
-        gardiner_ids = query[query >= 50].index
+        gardiner_ids = query[query >= n].index
         query = dataframe[dataframe['gardiner'].isin(gardiner_ids)]
 
         return np.array(gardiner_ids), query
