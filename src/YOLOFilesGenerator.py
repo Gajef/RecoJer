@@ -15,7 +15,7 @@ class YOLOFilesGenerator:
         self.glyph_class_dictionary = self.__create_dictionary()
 
     # Translates txt from original form to YOLO form
-    def translate_txt(self, original_file_path, new_file_path):
+    def translate_txt(self, original_file_path, new_file_path, is_binary = True):
         with open(original_file_path, 'r') as original_file, open(new_file_path, 'w') as new_file:
             for line in original_file:
                 line.strip()
@@ -25,7 +25,7 @@ class YOLOFilesGenerator:
                     image_name, x_top, y_top, x_bottom, y_bottom, _ = line.split(",")
                 gardiner_id = image_name.split(".")[0].split("_")[1]
                 if gardiner_id in self.gardiner_ids:
-                    class_by_id = self.glyph_class_dictionary[gardiner_id]
+                    class_by_id = 0 if is_binary else self.glyph_class_dictionary[gardiner_id]
 
                     x_center = ((int(x_top) + int(x_bottom)) / 2) / 1150
                     y_center = ((int(y_top) + int(y_bottom)) / 2) / 1600
