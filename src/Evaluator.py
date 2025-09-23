@@ -157,7 +157,8 @@ class Evaluator:
         image = cv2.imread(image_path)
 
         for gt_bbox in groundtruth_bboxes:
-            gx1, gy1, gx2, gy2 = gt_bbox
+            gt_class, gx1, gy1, gx2, gy2 = gt_bbox
+            gt_bbox = [gx1, gy1, gx2, gy2]
             cv2.rectangle(image, (gx1, gy1), (gx2, gy2), (0, 0, 255), 1)
             overlapped_bboxes = []
             for dt_bbox in detected_bboxes:
