@@ -11,7 +11,7 @@ class Evaluator:
         self.paths = PathsProvider()
         self.classifier = HogClassifier()
 
-    def evaluate(self, images_folder_path, labels_folder_path, iou_threshold=0.5, label_mode = 0, yolo_model = None):
+    def evaluate(self, images_folder_path, labels_folder_path, iou_threshold=0.5, label_mode = 0, yolo_model = None, verbose = False):
         """
         Evaluates classifier.
         :param images_folder_path: Folder of annotated images.
@@ -19,6 +19,7 @@ class Evaluator:
         :param iou_threshold: Threshold for diff between false and true positives.
         :param label_mode: 0 for Glyphdataset type (w/ Hog), 1 for YOLO type (w/ Hog), >= 2 for YOLO type (w/ YOLO model).
         :param yolo_model: YOLO model for mode 2
+        :param verbose: If true print metrics for every single image evaluated.
         :return: Prints evaluation and saves images.
         """
 
@@ -28,6 +29,7 @@ class Evaluator:
         tp_list = []
         fp_list = []
         fn_list = []
+        tn_list = []
         iou_mean_list = []
 
         for image_name in images_names:
@@ -35,25 +37,28 @@ class Evaluator:
             if image_extension == '.png' or image_extension == '.jpg' or image_extension == '.jpeg':
                 image_path = os.path.join(images_folder_path, image_name)
                 label_name = image_name.split('.')[0]
+                image = cv2.imread(image_path)
+                img_shape = image.shape
 
-                gt_bboxes = self._read_bboxes_file(f"{labels_folder_path}/{label_name}.txt", label_mode)
+                gt_bboxes = self._read_bboxes_file(f"{labels_folder_path}/{label_name}.txt", img_shape[0], img_shape[1] , label_mode)
 
                 if yolo_model is None:
                     _, detect_bboxes = self.classifier.find_glyphs(image_path)
                 else:
                     detect_bboxes = self._get_bboxes_from_YOLO_inference(yolo_model, image_path)
 
-                tp, fp, fn, iou_mean = self.evaluate_bboxes(gt_bboxes, detect_bboxes, image_path, iou_threshold, True)
+                tp, fp, fn, tn, iou_mean = self.evaluate_bboxes_binary(gt_bboxes, detect_bboxes, image_path, iou_threshold, verbose)
 
                 tp_list += [tp]
                 fp_list += [fp]
                 fn_list += [fn]
+                tn_list += [tn]
                 iou_mean_list += [iou_mean]
                 gt_count_list.append(len(gt_bboxes))
                 detect_count_list.append(len(detect_bboxes))
 
         # Metricas
-        accuracy = np.sum(tp_list)/(np.sum(tp_list) + np.sum(fp_list) + np.sum(fn_list))
+        accuracy = np.sum(tp_list)/(np.sum(tp_list) + np.sum(fp_list) + np.sum(fn_list) + np.sum(tn_list))
         precision = np.sum(tp_list) /np.sum(detect_count_list) if np.sum(detect_count_list) else 0
         recall = np.sum(tp_list) /np.sum(gt_count_list) if np.sum(gt_count_list) else 0
 
@@ -65,6 +70,70 @@ class Evaluator:
         print(f"* Media de IoUs de las detecciones correctas (TP): {np.mean(iou_mean_list): .2f}")
 
         print(f"\n * TP: {np.sum(tp_list)}, FP: {np.sum(fp_list)}, FN: {np.sum(fn_list)}")
+
+    def evaluate_bboxes_binary(self, groundtruth_bboxes, detected_bboxes, image_path, iou_threshold, verbose = False):
+        """
+        Calculations for IoU's of bounding boxes for a specific image.
+
+        :param groundtruth_bboxes:
+        :param detected_bboxes:
+        :param image_path:
+        :param iou_threshold:
+        :param verbose:
+        :return:
+        """
+        true_positives = 0
+        false_positives = 0
+        false_negatives = 0
+        true_negatives = 0
+        n_detected = len(detected_bboxes)
+        ious_list = []
+        image = cv2.imread(image_path)
+
+        for gt_bbox in groundtruth_bboxes:
+            gt_class, gx1, gy1, gx2, gy2 = gt_bbox
+            gt_bbox = [gx1, gy1, gx2, gy2]
+            cv2.rectangle(image, (gx1, gy1), (gx2, gy2), (0, 0, 255), 1)
+            overlapped_bboxes = []
+            for dt_bbox in detected_bboxes:
+                dt_class = dt_bbox[0]
+                dt_bbox = dt_bbox[1:]
+                iou = self._intersection_over_union(dt_bbox, gt_bbox)
+                if iou > iou_threshold:
+                    # if iguales y 1 = TP, iguales y 0 = TN, gt 1 y dt 0 = FN, gt 0 y dt 1 = FP.
+                    overlapped_bboxes.append(dt_bbox)
+                    cv2.rectangle(image, (dt_bbox[0], dt_bbox[1]), (dt_bbox[2], dt_bbox[3]), (0, 255, 0), 1)
+                    true_positives += 1
+                    ious_list.append(iou)
+                    break
+
+            detected_bboxes = [bbox for bbox in detected_bboxes if bbox not in overlapped_bboxes]
+            if len(overlapped_bboxes) == 0:
+                cv2.rectangle(image, (gx1, gy1), (gx2, gy2), (255, 255, 0), 1)
+                false_negatives += 1
+
+        for dt_bbox in detected_bboxes:
+            cv2.rectangle(image, (dt_bbox[0], dt_bbox[1]), (dt_bbox[2], dt_bbox[3]), (255, 0, 0), 1)
+            false_positives += 1
+
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        cv2.imwrite(f"{self.paths.RESULTS}/contours/images/{os.path.basename(image_path)}", image)
+
+        iou_mean = np.mean(ious_list) if ious_list else 0
+
+        if verbose:
+            precision = true_positives / n_detected if n_detected > 0 else 0
+            recall = true_positives / len(groundtruth_bboxes) if len(groundtruth_bboxes) > 0 else 0
+            accuracy = true_positives / (n_detected + false_negatives) if (n_detected + false_negatives) > 0 else 0
+            print(f"En la imagen {os.path.basename(image_path)} hay {len(groundtruth_bboxes)} detecciones (groundtruth):")
+            print(f"   * {false_negatives} glifos que no se detectaron (falsos negativos).")
+            print(f"   * El algoritmo hizo {n_detected} detecciones: ")
+            print(f"      * Accuracy:  {accuracy: .2f} -> {true_positives}/{n_detected + false_negatives} glifos TP del total" )
+            print(f"      * Precision: {precision: .2f} -> {true_positives}/{n_detected} glifos bien detectados de todos los predichos")
+            print(f"      * Recall:    {recall: .2f} -> {true_positives}/{len(groundtruth_bboxes)} glifos de todas las instancias reales ")
+            print(f"   * Media de IoUs de las detecciones correctas (TP): {iou_mean: .3f}\n")
+
+        return true_positives, false_positives, false_negatives, true_negatives, iou_mean
 
     def evaluate_bboxes(self, groundtruth_bboxes, detected_bboxes, image_path, iou_threshold, verbose = False):
         """
@@ -80,6 +149,7 @@ class Evaluator:
         true_positives = 0
         false_positives = 0
         false_negatives = 0
+        true_negatives = 0
         n_detected = len(detected_bboxes)
         ious_list = []
         image = cv2.imread(image_path)
@@ -123,46 +193,69 @@ class Evaluator:
             print(f"      * Recall:    {recall: .2f} -> {true_positives}/{len(groundtruth_bboxes)} glifos de todas las instancias reales ")
             print(f"   * Media de IoUs de las detecciones correctas (TP): {iou_mean: .3f}\n")
 
-        return true_positives, false_positives, false_negatives, iou_mean
+        return true_positives, false_positives, false_negatives, true_negatives, iou_mean
 
-    def _read_class_bboxes_file(self, file_path):
-        with open(file_path) as f:
-            gt_bboxes = []
-            fileline = f.readlines()
-            for line in fileline:
-                line = line.split(',')[:-1]
-                line[0] = line[0].split('.')[0].split('_')[1]
-                for idx in range(1, 5):
-                    line[idx] = int(line[idx])
-                gt_bboxes.append(line)
-
-        return gt_bboxes
-
-    def _read_bboxes_file(self, file_path, label_mode =0):
+    def _read_bboxes_file(self, file_path, image_height, image_width, label_mode = 0, class_mode = 1):
         """
-        Read bounding boxes from file.
+        Read and return bounding boxes from file.
 
         :param file_path: Location of the file containing the bounding boxes.
         :param label_mode: 0 for Glyphdataset style, >= 1 for YOLO style:
              "030000_S29.png,71,27,105,104," or like "030000_S29.png,71,27,105,104" (Glyphdataset style)
              "0 0.176176 0.165179 0.027647 0.016071" (YOLO style)
+        :param class_mode: 0 for one class, 1 for binary classification, >= 2 for multiclass.
         :return: Read bounding boxes.
         """
         with open(file_path) as f:
             bboxes = f.readlines()
             if label_mode == 0:
+                if class_mode == 0:
+                    glyph_classes = [0 for _ in bboxes]
+                elif class_mode == 1:
+                    glyph_classes = [line.split(',')[0].split('_')[1].split('.')[0] for line in bboxes]
+                    glyph_classes = [(0 if g_class == '0' else 1) for g_class in glyph_classes]
+                else:
+                    glyph_classes = [line.split(',')[0].split('_')[1].split('.')[0] for line in bboxes]
                 bboxes = [box.split(',')[1:] for box in bboxes]
                 if len(bboxes[0]) > 4:
                     bboxes = [box[:-1] for box in bboxes if len(box) > 4]
             else:
-                bboxes = [box.strip().split(' ')[1:] for box in bboxes]
+                glyph_classes = [line.split(' ')[0] for line in bboxes]
+                bboxes = [line.strip().split(' ')[1:] for line in bboxes]
                 bboxes = [[float(coord) for coord in box] for box in bboxes]
                 bboxes = [[x - w / 2, y - h / 2, x + w / 2, y + h / 2] for x, y, w, h in bboxes]
-                bboxes = [[x1 * 1700, y1 * 2800, x2 * 1700, y2 * 2800] for x1, y1, x2, y2 in bboxes]
+                # bboxes = [[x1 * 1700, y1 * 2800, x2 * 1700, y2 * 2800] for x1, y1, x2, y2 in bboxes]
+                bboxes = [[x1 * image_width, y1 * image_height, x2 * image_width, y2 * image_height] for x1, y1, x2, y2 in bboxes]
 
-            bboxes = [[int(coord) for coord in box] for box in bboxes]
+            bboxes = [[g_class] + [int(coord) for coord in box] for (g_class, box) in zip(glyph_classes, bboxes)]
 
         return bboxes
+
+    # def _read_bboxes_file(self, file_path, label_mode = 0):
+    #     """
+    #     Read bounding boxes from file.
+    #
+    #     :param file_path: Location of the file containing the bounding boxes.
+    #     :param label_mode: 0 for Glyphdataset style, >= 1 for YOLO style:
+    #          "030000_S29.png,71,27,105,104," or like "030000_S29.png,71,27,105,104" (Glyphdataset style)
+    #          "0 0.176176 0.165179 0.027647 0.016071" (YOLO style)
+    #     :return: Read bounding boxes.
+    #     """
+    #     with open(file_path) as f:
+    #         bboxes = f.readlines()
+    #         if label_mode == 0:
+    #             bboxes = [box.split(',')[1:] for box in bboxes]
+    #             if len(bboxes[0]) > 4:
+    #                 bboxes = [box[:-1] for box in bboxes if len(box) > 4]
+    #         else:
+    #             bboxes = [box.strip().split(' ')[1:] for box in bboxes]
+    #             bboxes = [[float(coord) for coord in box] for box in bboxes]
+    #             bboxes = [[x - w / 2, y - h / 2, x + w / 2, y + h / 2] for x, y, w, h in bboxes]
+    #             bboxes = [[x1 * 1700, y1 * 2800, x2 * 1700, y2 * 2800] for x1, y1, x2, y2 in bboxes]
+    #
+    #         bboxes = [[int(coord) for coord in box] for box in bboxes]
+    #
+    #     return bboxes
 
     def _intersection_over_union(self, bbox1, bbox2):
         """
@@ -186,6 +279,8 @@ class Evaluator:
 
     def _get_bboxes_from_YOLO_inference(self, model, image_path):
         """
+        Given a YOLO model, returns a list of bounding boxes for the detections on an image.
+
         :param model: YOLO model
         :param image_path: Path of the image to infer.
         :return: Inferred bounding boxes.
@@ -195,3 +290,21 @@ class Evaluator:
         bboxes = [[int(coord) for coord in bbox] for bbox in bboxes]
 
         return bboxes
+
+    def _get_class_and_bboxes_from_YOLO_inference(self, model, image_path):
+        """
+        Given a YOLO model, returns a list of classes and bounding boxes for the detections on an image.
+
+        :param model: YOLO model
+        :param image_path: Path of the image to infer.
+        :return: Inferred bounding boxes.
+        """
+        inference = model(image_path)[0]
+        classes = inference.boxes.cls.tolist()
+        classes =  [int(cls) for cls in classes]
+        bboxes = inference.boxes.xyxy.tolist()
+        bboxes = [[int(coord) for coord in bbox] for bbox in bboxes]
+
+        inferences = np.column_stack((classes, bboxes))
+
+        return inferences
