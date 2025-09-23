@@ -29,7 +29,7 @@ class Evaluator:
         tp_list = []
         fp_list = []
         fn_list = []
-        tn_list = []
+        # tn_list = []
         iou_mean_list = []
 
         for image_name in images_names:
@@ -47,18 +47,20 @@ class Evaluator:
                 else:
                     detect_bboxes = self._get_bboxes_from_YOLO_inference(yolo_model, image_path)
 
-                tp, fp, fn, tn, iou_mean = self.evaluate_bboxes_binary(gt_bboxes, detect_bboxes, image_path, iou_threshold, verbose)
+                tp, fp, fn, iou_mean = self.evaluate_bboxes(gt_bboxes, detect_bboxes, image_path, iou_threshold, True)
+                # tp, fp, fn, tn, iou_mean = self.evaluate_bboxes_binary(gt_bboxes, detect_bboxes, image_path, iou_threshold, verbose)
 
                 tp_list += [tp]
                 fp_list += [fp]
                 fn_list += [fn]
-                tn_list += [tn]
+                # tn_list += [tn]
                 iou_mean_list += [iou_mean]
                 gt_count_list.append(len(gt_bboxes))
                 detect_count_list.append(len(detect_bboxes))
 
         # Metricas
-        accuracy = np.sum(tp_list)/(np.sum(tp_list) + np.sum(fp_list) + np.sum(fn_list) + np.sum(tn_list))
+        # accuracy = np.sum(tp_list)/(np.sum(tp_list) + np.sum(fp_list) + np.sum(fn_list) + np.sum(tn_list))
+        accuracy = np.sum(tp_list) / (np.sum(tp_list) + np.sum(fp_list) + np.sum(fn_list))
         precision = np.sum(tp_list) /np.sum(detect_count_list) if np.sum(detect_count_list) else 0
         recall = np.sum(tp_list) /np.sum(gt_count_list) if np.sum(gt_count_list) else 0
 
@@ -149,7 +151,7 @@ class Evaluator:
         true_positives = 0
         false_positives = 0
         false_negatives = 0
-        true_negatives = 0
+        # true_negatives = 0
         n_detected = len(detected_bboxes)
         ious_list = []
         image = cv2.imread(image_path)
@@ -193,7 +195,8 @@ class Evaluator:
             print(f"      * Recall:    {recall: .2f} -> {true_positives}/{len(groundtruth_bboxes)} glifos de todas las instancias reales ")
             print(f"   * Media de IoUs de las detecciones correctas (TP): {iou_mean: .3f}\n")
 
-        return true_positives, false_positives, false_negatives, true_negatives, iou_mean
+        # return true_positives, false_positives, false_negatives, true_negatives, iou_mean
+        return true_positives, false_positives, false_negatives, iou_mean
 
     def _read_bboxes_file(self, file_path, image_height, image_width, label_mode = 0, class_mode = 1):
         """
