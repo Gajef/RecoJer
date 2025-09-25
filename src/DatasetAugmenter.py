@@ -110,8 +110,8 @@ class DatasetAugmenter:
         length = len(pictures)
 
         train = np.array(pictures[:int(length * 0.625)]).flatten().tolist()
-        val = np.array(pictures[int(length * 0.625):  int(length * 0.9)]).flatten().tolist()
-        test = np.array(pictures[int(length * 0.9):]).flatten().tolist()
+        val = np.array(pictures[int(length * 0.625):  int(length * 0.8)]).flatten().tolist()
+        test = np.array(pictures[int(length * 0.8):]).flatten().tolist()
 
         self.save_images(train, "train",source, dst = dst)
         self.save_images(val, "val", source,  dst = dst)
