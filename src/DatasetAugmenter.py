@@ -53,10 +53,14 @@ class DatasetAugmenter:
 
 
     def full_augmentation(self, dst = paths.AUGMENTED_DATASET):
+        augmented_pictures = []
+
         pictures_path = self.paths.PICTURES
         pictures_path = self.paths.get_files_by_extension_in_order(pictures_path, "jpg")
         for picture_path in pictures_path:
-            self.augmentation(picture_path, dst = dst)
+            augmented_pictures += [self.augmentation(picture_path)]
+
+        self.train_test_split_and_save_pictures(augmented_pictures, dst = dst)
 
     # Returns n images by doing all the preprocessing
     def augmentation(self, picture_name, dst = paths.AUGMENTED_DATASET, verbose=False):
@@ -93,11 +97,11 @@ class DatasetAugmenter:
         rg_picture = Picture(right_shadow_img, f"{picture_name.split('.')[0]}_rg")
         pictures += [lf_picture, rg_picture]
 
-        self.train_test_split_and_save_pictures(pictures, dst = dst)
+        # self.train_test_split_and_save_pictures(pictures, dst = dst)
 
         if verbose:
             pass
-        return None #[binarized_img, borders]
+        return pictures #[binarized_img, borders]
 
     def train_test_split_and_save_pictures(self, pictures, dst = paths.AUGMENTED_DATASET):
         source = self.paths.MANUAL_LOCATIONS
@@ -107,9 +111,9 @@ class DatasetAugmenter:
 
         length = len(pictures)
 
-        train = pictures[:int(length * 0.67)]
-        val = pictures[int(length * 0.67):  int(length * 0.90)]
-        test = pictures[int(length * 0.90):]
+        train = np.array(pictures[:int(length * 0.625)]).flatten().tolist()
+        val = np.array(pictures[int(length * 0.625):  int(length * 0.9)]).flatten().tolist()
+        test = np.array(pictures[int(length * 0.9):]).flatten().tolist()
 
         self.save_images(train, "train",source, dst = dst)
         self.save_images(val, "val", source,  dst = dst)
