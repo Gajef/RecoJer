@@ -11,7 +11,7 @@ class Evaluator:
         self.paths = PathsProvider()
         self.classifier = HogClassifier()
 
-    def evaluate(self, images_folder_path, labels_folder_path, iou_threshold=0.5, label_mode = 0, yolo_model = None, verbose = False):
+    def evaluate(self, images_folder_path, labels_folder_path, iou_threshold=0.5, label_mode = 0, yolo_model = None, verbose = False, beginning = ""):
         """
         Evaluates classifier.
         :param images_folder_path: Folder of annotated images.
@@ -23,7 +23,7 @@ class Evaluator:
         :return: Prints evaluation and saves images.
         """
 
-        images_names = os.listdir(images_folder_path)
+        images_names = [name for name in os.listdir(images_folder_path) if name.startswith(beginning)]
         gt_count_list = []
         detect_count_list = []
         tp_list = []
@@ -289,7 +289,7 @@ class Evaluator:
         :param image_path: Path of the image to infer.
         :return: Inferred bounding boxes.
         """
-        inference = model(image_path, max_det=500)[0]
+        inference = model(image_path)[0]
         bboxes = inference.boxes.xyxy.tolist()
         bboxes = [[int(coord) for coord in bbox] for bbox in bboxes]
 
