@@ -289,7 +289,7 @@ class Evaluator:
         :param image_path: Path of the image to infer.
         :return: Inferred bounding boxes.
         """
-        inference = model(image_path)[0]
+        inference = model(image_path, max_det = 500)[0]
         bboxes = inference.boxes.xyxy.tolist()
         bboxes = [[int(coord) for coord in bbox] for bbox in bboxes]
 
