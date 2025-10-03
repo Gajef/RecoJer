@@ -95,6 +95,11 @@ class DatasetAugmenter:
         rg_picture = Picture(right_shadow_img, f"{picture_name.split('.')[0]}_rg")
         pictures += [lf_picture, rg_picture]
 
+        # 1 inverted image
+        inverted_img = self.preprocessor.invert(image)
+        iv_picture = Picture(inverted_img, f"{picture_name.split('.')[0]}_invert")
+        pictures.append(iv_picture)
+
         # self.train_test_split_and_save_pictures(pictures, dst = dst)
 
         if verbose:
