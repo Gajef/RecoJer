@@ -50,20 +50,20 @@ class DatasetAugmenter:
                         shutil.copy(os.path.join(folder, file), os.path.join(folder, f"{filename}_{i}{extension}"))
 
 
-    def full_augmentation(self, dst = paths.AUGMENTED_DATASET):
+    def full_augmentation(self, images = paths.PICTURES, labels = paths.MANUAL_LOCATIONS, dst = paths.AUGMENTED_DATASET, with_strong_binarize = True, img_extension = "jpg"):
         augmented_pictures = []
 
-        pictures_path = self.paths.PICTURES
-        pictures_path = self.paths.get_files_by_extension_in_order(pictures_path, "jpg")
-        for picture_path in pictures_path:
-            augmented_pictures += [self.augmentation(picture_path)]
+        pictures_path = images # self.paths.PICTURES
+        pictures_paths = self.paths.get_files_by_extension_in_order(pictures_path, img_extension)
+        for picture_path in pictures_paths:
+            augmented_pictures += [self.augmentation(picture_path, images, with_strong_binarize)]
 
-        self.train_test_split_and_save_pictures(augmented_pictures, dst = dst)
+        self.train_test_split_and_save_pictures(augmented_pictures, labels = labels, dst = dst)
 
     # Returns n images by doing all the preprocessing
-    def augmentation(self, picture_name, dst = paths.AUGMENTED_DATASET, verbose=False):
+    def augmentation(self, picture_name, images, with_strong_binarize, verbose=False):
         pictures = []
-        image = cv2.cvtColor(cv2.imread(f"{self.paths.PICTURES}/{picture_name}"), cv2.COLOR_RGB2GRAY)
+        image = cv2.cvtColor(cv2.imread(f"{images}/{picture_name}"), cv2.COLOR_RGB2GRAY)
         picture = Picture(image, picture_name.split(".")[0])
         pictures.append(picture)
 
@@ -74,19 +74,18 @@ class DatasetAugmenter:
         lb_picture = Picture(lower_brightness, f"{picture_name.split('.')[0]}_lb")
         pictures += [hb_picture, lb_picture]
 
-        # 3 binarized imgs
-        auto_binarized_img = self.preprocessor.binarize(image)
-        bin_picture = Picture(auto_binarized_img, f"{picture_name.split('.')[0]}_bin")
+        # 3 binarized imgs and 1 borders img
+        if with_strong_binarize:
+            auto_binarized_img = self.preprocessor.binarize(image)
+            bin_picture = Picture(auto_binarized_img, f"{picture_name.split('.')[0]}_bin")
+            high_binarized_img = self.preprocessor.binarize(image, th=180)
+            hbin_picture = Picture(high_binarized_img, f"{picture_name.split('.')[0]}_hin")
+            auto_borders = self.preprocessor.ext_border(auto_binarized_img)
+            ab_picture = Picture(auto_borders, f"{picture_name.split('.')[0]}_ab")
+            pictures += [bin_picture, hbin_picture, ab_picture]
         low_binarized_img = self.preprocessor.binarize(image, th=140)
         lbin_picture = Picture(low_binarized_img, f"{picture_name.split('.')[0]}_low")
-        high_binarized_img = self.preprocessor.binarize(image, th=180)
-        hbin_picture = Picture(high_binarized_img, f"{picture_name.split('.')[0]}_hin")
-        pictures += [bin_picture, lbin_picture, hbin_picture]
-
-        # 1 borders_imgs
-        auto_borders = self.preprocessor.ext_border(auto_binarized_img)
-        ab_picture = Picture(auto_borders, f"{picture_name.split('.')[0]}_ab")
-        pictures.append(ab_picture)
+        pictures += [lbin_picture]
 
         # 2 shadow_imgs
         left_shadow_img = self.preprocessor.shadow(image, "left")
@@ -100,15 +99,11 @@ class DatasetAugmenter:
         iv_picture = Picture(inverted_img, f"{picture_name.split('.')[0]}_invert")
         pictures.append(iv_picture)
 
-        # self.train_test_split_and_save_pictures(pictures, dst = dst)
-
         if verbose:
             pass
-        return pictures #[binarized_img, borders]
+        return pictures
 
-    def train_test_split_and_save_pictures(self, pictures, dst = paths.AUGMENTED_DATASET):
-        source = self.paths.MANUAL_LOCATIONS
-
+    def train_test_split_and_save_pictures(self, pictures, dst = paths.AUGMENTED_DATASET, labels = paths.MANUAL_LOCATIONS):
         rng = np.random.default_rng()
         rng.shuffle(pictures)
 
@@ -118,17 +113,28 @@ class DatasetAugmenter:
         val = np.array(pictures[int(length * 0.625):  int(length * 0.8)]).flatten().tolist()
         test = np.array(pictures[int(length * 0.8):]).flatten().tolist()
 
-        self.save_images(train, "train",source, dst = dst)
-        self.save_images(val, "val", source,  dst = dst)
-        self.save_images(test, "test", source, dst = dst)
+        self.save_images(train, "train", labels, dst = dst)
+        self.save_images(val, "val", labels, dst = dst)
+        self.save_images(test, "test", labels, dst = dst)
 
-    def save_images(self, pictures, path,source = paths.MANUAL_LOCATIONS, dst = paths.AUGMENTED_DATASET):
+    def save_images(self, pictures, path, source = paths.MANUAL_LOCATIONS, dst = paths.AUGMENTED_DATASET):
         for picture in pictures:
             image = picture.image
             name = picture.name
-            location_file = name.split(".")[0].split("_")[0]
             cv2.imwrite(f"{dst}/images/{path}/{name}.jpg", image)
-            self.files_generator.translate_txt(f"{source}/{location_file}.txt", f"{dst}/labels/{path}/{name}.txt", image.shape[1], image.shape[0], just_in_gardiner = False)
+            suffix = name.split(".")[0].split("_")[-1]
+            if suffix.isdigit():
+                label_filename = name
+            else:
+                label_filename = name.replace("_" + suffix, "")
+
+            if name.startswith("egyptian"):
+                self.files_generator.translate_txt(f"{source}/{label_filename}.txt", f"{dst}/labels/{path}/{name}.txt",
+                                               image.shape[1], image.shape[0], just_in_gardiner=False)
+
+            else:
+                shutil.copy(f"{source}/{label_filename}.txt", f"{dst}/labels/{path}/{name}.txt")
+
 
     # Generate folders for train and test
     def generate_folders(self, folder_name):
