@@ -11,19 +11,20 @@ class Evaluator:
         self.paths = PathsProvider()
         self.classifier = HogClassifier()
 
-    def evaluate(self, images_folder_path, labels_folder_path, iou_threshold=0.5, label_mode = 0, yolo_model = None, verbose = False, beginning = ""):
+    def evaluate(self, images_folder_path, labels_folder_path, iou_threshold=0.5, label_mode = 0, yolo_model = None, verbose = False, file_substring = ""):
         """
         Evaluates classifier.
         :param images_folder_path: Folder of annotated images.
         :param labels_folder_path: Groundtruth of images.
         :param iou_threshold: Threshold for diff between false and true positives.
         :param label_mode: 0 for Glyphdataset type (w/ Hog), 1 for YOLO type (w/ Hog), >= 2 for YOLO type (w/ YOLO model).
-        :param yolo_model: YOLO model for mode 2
+        :param yolo_model: YOLO model for mode 2.
         :param verbose: If true print metrics for every single image evaluated.
+        :param file_substring: Substring contained on filenames that will be evaluated.
         :return: Prints evaluation and saves images.
         """
 
-        images_names = [name for name in os.listdir(images_folder_path) if name.startswith(beginning)]
+        images_names = [name for name in os.listdir(images_folder_path) if file_substring in name]
         gt_count_list = []
         detect_count_list = []
         tp_list = []
@@ -234,7 +235,7 @@ class Evaluator:
             bboxes = [[g_class] + [int(coord) for coord in box] for (g_class, box) in zip(glyph_classes, bboxes)]
 
         return bboxes
-
+    # And then ill be here breaking character
     # def _read_bboxes_file(self, file_path, label_mode = 0):
     #     """
     #     Read bounding boxes from file.
