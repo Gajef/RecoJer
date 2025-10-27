@@ -125,7 +125,7 @@ class GlyphAsciiGenerator:
                 complete_picture = True
 
             if complete_picture:
-                white_canvas.save(f"{dst}/images{path}/pt_{picture_id}.png")
+                white_canvas.save(f"{dst}/images{path}/pt_{picture_id}.jpg")
                 white_canvas.close()
                 self.files_generator.generate_txt(annotations, path, f"pt_{picture_id}.txt", dst = dst)
                 complete_picture, plotting_column_positions, plotting_index, white_canvas, annotations, picture_id = self.initialize_picture(
