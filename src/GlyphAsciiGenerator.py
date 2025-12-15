@@ -125,7 +125,7 @@ class GlyphAsciiGenerator:
                 complete_picture = True
 
             if complete_picture:
-                white_canvas.save(f"{dst}/images{path}/pt_{picture_id}.jpg")
+                white_canvas.save(f"{dst}/images{path}/pt_{picture_id}.png")
                 white_canvas.close()
                 self.files_generator.generate_txt(annotations, path, f"pt_{picture_id}.txt", dst = dst)
                 complete_picture, plotting_column_positions, plotting_index, white_canvas, annotations, picture_id = self.initialize_picture(
@@ -254,6 +254,8 @@ class GlyphAsciiGenerator:
             else:
                 # Se deja como está previsiblemente (TODO: o se aplica mixup)
                 composition = self.resize_to_width(next_image)
+                if is_stone:
+                    composition = self.resize_to_height(composition)
                 annotations += self.generate_annotations(plotting_index, column_width, img_shape, composition.size, next_image_path, composition, (0, 0), custom_class)
 
         else:
@@ -271,6 +273,14 @@ class GlyphAsciiGenerator:
 
         return image
 
+    def resize_to_height(self, image, height=75):
+        (image_width, image_height) = image.size
+        if image_height > height:
+            resize_factor = height / image_height
+            image = image.resize(
+                (int(image_width * resize_factor), int(image_height * resize_factor)))
+
+        return image
     def generate_annotations(self, plotting_index, column_width, img_shape, composition_size, pasted_image_path, pasted_image, paste_position, custom_class = None):
         (img_height, img_width) = img_shape
         (pasted_image_width, pasted_image_height) = pasted_image.size
