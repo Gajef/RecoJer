@@ -254,12 +254,12 @@ class GlyphAsciiGenerator:
             else:
                 # Se deja como está previsiblemente (TODO: o se aplica mixup)
                 composition = self.resize_to_width(next_image)
-                if is_stone:
-                    composition = self.resize_to_height(composition)
                 annotations += self.generate_annotations(plotting_index, column_width, img_shape, composition.size, next_image_path, composition, (0, 0), custom_class)
 
         else:
             composition = self.resize_to_width(next_image)
+            if is_stone:
+                composition = self.resize_to_height(composition)
             annotations += self.generate_annotations(plotting_index, column_width, img_shape, composition.size, next_image_path, composition, (0, 0), custom_class)
 
         return composition, annotations
