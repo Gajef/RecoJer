@@ -117,6 +117,10 @@ class DatasetAugmenter:
         self.save_images(val, "val", labels, dst = dst)
         self.save_images(test, "test", labels, dst = dst)
 
+        # Elimino imagenes aumentadas del test
+        self.remove_files_by_suffixes(f"{dst}/images/test")
+        self.remove_files_by_suffixes(f"{dst}/labels/test")
+
     def save_images(self, pictures, path, source = paths.MANUAL_LOCATIONS, dst = paths.AUGMENTED_DATASET):
         for picture in pictures:
             image = picture.image
@@ -135,6 +139,12 @@ class DatasetAugmenter:
             else:
                 shutil.copy(f"{source}/{label_filename}.txt", f"{dst}/labels/{path}/{name}.txt")
 
+    def remove_files_by_suffixes(self, folder, suffixes = ["ab", "bin", "hb", "lb", "hin", "low", "left", "rg", "invert"]):
+        files = [entrada.path for entrada in os.scandir(folder)]
+        files = [file for file in files if os.path.basename(file).split(".")[0].split("_")[-1] in suffixes]
+
+        for file in files:
+            os.remove(file)
 
     # Generate folders for train and test
     def generate_folders(self, folder_name):
